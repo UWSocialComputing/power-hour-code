@@ -9,21 +9,14 @@ import {
   MessageInput,
   ChannelListMessengerProps,
   useChatContext,
-  CustomStyles,
-  ChannelHeaderProps,
-  useTranslationContext,
-  useChannelPreviewInfo,
-  useChannelStateContext
 } from "stream-chat-react";
 
-import { useAuth, useLoggedInAuth } from "../context/AuthContext";
+import { useLoggedInAuth } from "../context/AuthContext";
 import { Button } from "../components/Button";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
 
 export function Home() {
   const {user, streamChat} = useLoggedInAuth();
-  const [hideChat, setHideChat] = useState(true);
   if (streamChat == null) return <LoadingIndicator />;
   return <div className="flex">
     <div className="w-2/3">
