@@ -14,30 +14,76 @@ import {
 import { useLoggedInAuth } from "../context/AuthContext";
 import { Button } from "../components/Button";
 import { useNavigate } from "react-router-dom";
+import Queue from "./objects/Queue";
+import PowerHourAppBar from "./objects/PowerHourAppBar";
+import StatisticCards from "./objects/StatisticCards";
+
+interface Data {
+  name: string,
+  timestamp: string,
+  questionType: string,
+  question: string,
+  InPersonOnline: string,
+  OpenToCollaboration: boolean,
+  Editable: boolean
+}
+
+function createData(
+  name: string,
+  timestamp: string,
+  questionType: string,
+  question: string,
+  InPersonOnline: string,
+  OpenToCollaboration: boolean,
+  Editable: boolean
+) : Data {
+  return { name, timestamp, questionType, question, InPersonOnline, OpenToCollaboration, Editable };
+}
+
+const rowDataTemp = [
+  createData('Amanda Ha', "2:55:30", "Conceptual", "Question 5 b", "In Person", true, false),
+  createData('Andrea Ha', "2:45:30", "Debugging",  "Question 5 b", "In Person", true, false),
+  createData('Wen Qiu', "2:35:20", "Debugging", "Question 5 b", "In Person", true, true),
+  createData('Sonia Fereidooni', "2:34:10", "Debugging", "Question 6", "Online", false, false),
+  createData('Kevin Feng', "2:25:30", "Debugging",  "Question 5 b", "In Person", true, false),
+];
+
+const currentUser = "Wen Qiu"
+const isCurrentUser = (row: Data) => row.name == currentUser;
+
 
 export function Home() {
   const {user, streamChat} = useLoggedInAuth();
   if (streamChat == null) return <LoadingIndicator />;
-  return <div className="flex">
-    <div className="w-2/3">
-      Queue
-    </div>
-    <div className="w-1/3">
-      <Chat client={streamChat}>
+  return (
+  <div>
+    <PowerHourAppBar/>
+    <div className="flex">
+      <div className="w-2/3 m-10">
+        <StatisticCards waitTime={rowDataTemp.findIndex(isCurrentUser)*13} studentsAhead={rowDataTemp.findIndex(isCurrentUser)} activeSessions={3}/>
+        <div className="mt-10">
+          <Queue rowData={rowDataTemp}/>
+        </div>
+      </div>
+      <div className="w-1/3">
+        <Chat client={streamChat}>
           <ChannelList
             List={Channels}
             sendChannelsToList
-            filters={{members: {$in: [user.id]}}} />
-      <Channel>
-        <Window>
-            <ChannelHeader/>
-            <MessageList />
-            <MessageInput />
-          </Window>
-        </Channel>
-      </Chat>
+            filters={{members: {$in: [user.id]}}} 
+          />
+          <Channel>
+            <Window>
+              <ChannelHeader/>
+              <MessageList />
+              <MessageInput />
+            </Window>
+          </Channel>
+        </Chat>
+      </div>
     </div>
   </div>
+  )
 }
 
 function Channels({ loadedChannels }: ChannelListMessengerProps) {

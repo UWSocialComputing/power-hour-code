@@ -8,7 +8,7 @@ import { userRoutes } from "./routes/users";
 const app = fastify();
 app.register(cors, { origin: (origin, cb) => {
   const hostname = new URL(origin!).hostname
-  if(hostname === "localhost"){
+  if(hostname === "localhost" || hostname === "127.0.0.1"){
     //  Request from localhost will pass
     cb(null, true)
     return;
