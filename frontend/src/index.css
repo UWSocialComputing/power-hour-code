@@ -1,3 +1,24 @@
+@import 'stream-chat-react/dist/css/index.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.str-chat {
+  height: 95vh !important;
+}
+
+.str-chat__message-reactions {
+  margin-top: 3px !important;
+}
+
+.str-chat__reaction-list--counter {
+  margin-top: -10px !important;
+}
+
+.str-chat-channel-list {
+  float: none !important;
+}
+
+.str-chat-channel.messaging .str-chat__main-panel {
+  padding: var(--sm-p) var(--xs-p) var(--sm-p) var(--xs-p) !important;
+}
