@@ -30,6 +30,7 @@ interface Data {
   questionType: string,
   question: string,
   InPersonOnline: string,
+  status: string,
   OpenToCollaboration: boolean,
   Editable: boolean
 }
@@ -40,18 +41,19 @@ function createData(
   questionType: string,
   question: string,
   InPersonOnline: string,
+  status: string,
   OpenToCollaboration: boolean,
   Editable: boolean
 ) : Data {
-  return { name, timestamp, questionType, question, InPersonOnline, OpenToCollaboration, Editable };
+  return { name, timestamp, questionType, question, InPersonOnline, status, OpenToCollaboration, Editable };
 }
 
 const rowDataTemp = [
-  createData('Amanda Ha', "2:55:30", "Conceptual", "Question 5 b", "In Person", true, false),
-  createData('Andrea Ha', "2:45:30", "Debugging",  "Question 5 b", "In Person", true, false),
-  createData('Wen Qiu', "2:35:20", "Debugging", "Question 5 b", "In Person", true, true),
-  createData('Sonia Fereidooni', "2:34:10", "Debugging", "Question 6", "Online", false, false),
-  createData('Kevin Feng', "2:25:30", "Debugging",  "Question 5 b", "In Person", true, false),
+  createData('Kevin Feng', "2:25:30", "Debugging",  "Question 5 b", "In Person", "Being helped", true, false),
+  createData('Amanda Ha', "2:34:30", "Conceptual", "Question 5 b", "In Person", "Waiting", true, false),
+  createData('Andrea Ha', "2:35:30", "Debugging",  "Question 5 b", "In Person", "Waiting", true, false),
+  createData('Wen Qiu', "2:36:20", "Debugging", "Question 5 b", "In Person", "Waiting", true, true),
+  createData('Sonia Fereidooni', "2:38:10", "Debugging", "Question 6", "Online", "Waiting", false, false),
 ];
 
 const currentUser = "Wen Qiu"
@@ -66,7 +68,7 @@ export function Home() {
     <PowerHourAppBar/>
     <div className="flex h-full">
       <div className="w-2/3 m-10">
-        <StatisticCards waitTime={rowDataTemp.findIndex(isCurrentUser)*13} studentsAhead={rowDataTemp.findIndex(isCurrentUser)} activeSessions={3}/>
+        <StatisticCards waitTime={rowDataTemp.findIndex(isCurrentUser)*10} studentsAhead={rowDataTemp.findIndex(isCurrentUser)} activeSessions={1}/>
         <div className="mt-10">
           <Queue rowData={rowDataTemp}/>
         </div>
@@ -124,7 +126,6 @@ function Channels({ loadedChannels }: ChannelListMessengerProps) {
               setActiveChannel(channel);
               toggleChatHandler();
             }}
-            disabled={isActive}
             className={`p-4 rounded-lg flex gap-3 items-center ${extraClasses}`}
             key={channel.id}
             >

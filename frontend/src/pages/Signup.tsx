@@ -8,7 +8,7 @@ export function Signup() {
   const { signup } = useAuth();
   const usernameRef = useRef<HTMLInputElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
-  const imageUrlRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -16,12 +16,14 @@ export function Signup() {
     if (signup.isLoading) return;
     const username = usernameRef.current?.value;
     const name = nameRef.current?.value;
-    const imageUrl = imageUrlRef.current?.value;
+    const password = passwordRef.current?.value;
 
-    if (username == null || username === "" || name == null || name === "") {
+    if (username == null || username === ""
+      || name == null || name === ""
+      || password == null || password === "") {
       return;
     }
-    signup.mutate({id: username, name, image: imageUrl})
+    signup.mutate({id: username, name, password})
   }
 
   return (
@@ -35,8 +37,8 @@ export function Signup() {
         <Input id="userName" pattern="\S*" required ref={usernameRef} />
         <label htmlFor="name">Name</label>
         <Input id="name" required ref={nameRef} />
-        <label htmlFor="imageUrl">Image Url</label>
-        <Input id="imageUrl" type="url" ref={imageUrlRef} />
+        <label htmlFor="password">Password</label>
+        <Input id="password" type="password" ref={passwordRef} />
         <Button disabled={signup.isLoading} type="submit" className="col-span-full">
           {signup.isLoading ? "Loading..." : "Sign Up"}
         </Button>

@@ -18,6 +18,7 @@ interface Data {
   questionType: string,
   question: string,
   InPersonOnline: string,
+  status: string,
   OpenToCollaboration: boolean,
   Editable: boolean
 }
@@ -56,6 +57,11 @@ const columns: ColumnData[] = [
     dataKey: 'InPersonOnline',
   },
   {
+    width: 120,
+    label: 'Status',
+    dataKey: 'status',
+  },
+  {
     width: 100,
     label: 'Open To Collaboration',
     dataKey: 'OpenToCollaboration',
@@ -65,7 +71,7 @@ const columns: ColumnData[] = [
     label: '',
     dataKey: 'Editable',
   },
-  
+
 ];
 
 const VirtuosoTableComponents: TableComponents<Data> = {
@@ -112,12 +118,12 @@ function rowContent(_index: number, row: Data) {
         >
           {
               column.dataKey == "OpenToCollaboration" ?
-                row[column.dataKey] ? 
+                row[column.dataKey] ?
                 <Chip label="Yes" color="success" />:
                 <Chip label="No" />:
 
               column.dataKey == "Editable" ?
-                row[column.dataKey] ? 
+                row[column.dataKey] ?
                 <IconButton color="primary" component="label"><EditIcon/></IconButton>:
                 <></>:
               row[column.dataKey]
