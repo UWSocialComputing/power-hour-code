@@ -11,6 +11,7 @@ import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 import EditIcon from '@mui/icons-material/Edit';
 import { TableVirtuoso, TableComponents } from 'react-virtuoso';
+import QueueForm from './QueueForm';
 
 interface Data {
   name: string,
@@ -124,7 +125,9 @@ function rowContent(_index: number, row: Data) {
 
               column.dataKey == "Editable" ?
                 row[column.dataKey] ?
-                <IconButton color="primary" component="label"><EditIcon/></IconButton>:
+                <IconButton color="primary" component="label">
+                  <EditIcon/>
+                </IconButton>:
                 <></>:
               row[column.dataKey]
           }
@@ -135,9 +138,10 @@ function rowContent(_index: number, row: Data) {
 }
 
 export default function ReactVirtualizedTable(props: any) {
+  const [showForm, setShowForm] = React.useState(false);
   return (
     <>
-      <Button variant="contained">Join Queue</Button>
+      <Button onClick={() => setShowForm(true)} variant="contained">Join Queue</Button>
       <Paper style={{ height: "500px", width: '100%', marginTop: "2%" }}>
         <TableVirtuoso
           data={props.rowData}
@@ -146,6 +150,7 @@ export default function ReactVirtualizedTable(props: any) {
           itemContent={rowContent}
         />
       </Paper>
+       <QueueForm setShowForm={setShowForm} showForm={showForm}/>:
     </>
   );
 }
