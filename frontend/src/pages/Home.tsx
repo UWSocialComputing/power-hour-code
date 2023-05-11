@@ -13,9 +13,7 @@ import {
   useChannelStateContext,
   useTranslationContext,
 } from "stream-chat-react";
-
 import { useLoggedInAuth } from "../context/AuthContext";
-import { Button } from "../components/Button";
 import { useNavigate } from "react-router-dom";
 import Queue from "./objects/Queue";
 import PowerHourAppBar from "./objects/PowerHourAppBar";
@@ -74,7 +72,7 @@ export function Home() {
         </div>
       </div>
       <ShowChatContext.Provider value={() => setShowChat(!showChat)}>
-        <div className="w-1/3 h-full">
+        <div className="w-1/3 h-full mt-3">
           <Chat client={streamChat}>
             <div className={showChat ? "hidden" : ""}>
               <ChannelList
@@ -104,17 +102,16 @@ function Channels({ loadedChannels }: ChannelListMessengerProps) {
   // provide info about chat
   const {setActiveChannel, channel: activeChannel} = useChatContext();
   const navigate = useNavigate();
-  const { logout } = useLoggedInAuth();
   const toggleChatHandler = useContext(ShowChatContext);
   return (
-    <div className="flex flex-col gap-4 m-3 h-full">
-      <div className="flex justify-between">
-        <h1>Collaboration Sessions</h1>
+    <div className="flex flex-col gap-1 h-full">
+      <div className="flex justify-between str-chat__header-livestream str-chat__channel-header">
+        <h1 className="font-semibold">Collaboration Sessions</h1>
         <button onClick={() => {navigate("/channel/new")}}>
           <Add />
         </button>
       </div>
-      <hr className="border-gray-500"/>
+      <div className="m-5">
       {loadedChannels != null && loadedChannels.length > 0
         ? loadedChannels.map(channel => {
           const isActive = channel === activeChannel;
@@ -126,7 +123,7 @@ function Channels({ loadedChannels }: ChannelListMessengerProps) {
               setActiveChannel(channel);
               toggleChatHandler();
             }}
-            className={`p-4 rounded-lg flex gap-3 items-center ${extraClasses}`}
+            className={`p-4 rounded-lg flex gap-2 items-center w-full mb-3 ${extraClasses}`}
             key={channel.id}
             >
               {channel.data?.image
@@ -137,8 +134,7 @@ function Channels({ loadedChannels }: ChannelListMessengerProps) {
             </button>
         })
         : "No conversations"}
-        <hr className="border-gray-500 mt-auto"/>
-        <Button onClick={() => logout.mutate()} disabled={logout.isLoading}>Logout</Button>
+      </div>
     </div>
   )
 }

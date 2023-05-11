@@ -4,7 +4,7 @@
 @tailwind utilities;
 
 .str-chat {
-  height: 95vh !important;
+  height: 90vh !important;
 }
 
 .str-chat__message-reactions {
@@ -20,5 +20,14 @@
 }
 
 .str-chat-channel.messaging .str-chat__main-panel {
-  padding: var(--sm-p) var(--xs-p) var(--sm-p) var(--xs-p) !important;
+  padding: 0 !important;
+  background-color: transparent !important;
+}
+
+.str-chat.messaging {
+  background-color: white !important;
+}
+
+.logout-btn {
+  color: white !important;
 }
