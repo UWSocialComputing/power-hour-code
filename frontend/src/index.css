@@ -31,3 +31,43 @@
 .logout-btn {
   color: white !important;
 }
+
+.str-chat__header-livestream {
+  background-color: #1976d2 !important;
+  color: white !important;
+}
+
+.dark-blue-bg {
+  background-color: #1976d2 !important;
+}
+
+.light-blue-bg {
+  background-color: aliceblue !important;
+}
+
+.rounded-bottom-corner {
+  border-radius: 0 0 var(--border-radius-md) var(--border-radius-md);
+}
+
+.str-chat__main-panel {
+  background-color: aliceblue !important;
+  border-radius: 0 0 var(--border-radius-md) var(--border-radius-md);
+}
+
+.messaging.str-chat .str-chat__list, .str-chat__input-flat {
+  background-color: aliceblue !important;
+}
+
+.str-chat__input-flat {
+  border-radius: 0 0 var(--border-radius-md) var(--border-radius-md);
+}
+
+.preview p {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.flex * {
+  min-width: 0;
+}

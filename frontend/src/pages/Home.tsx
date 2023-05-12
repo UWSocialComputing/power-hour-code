@@ -12,6 +12,7 @@ import {
   useChannelPreviewInfo,
   useChannelStateContext,
   useTranslationContext,
+  getLatestMessagePreview,
 } from "stream-chat-react";
 import { useLoggedInAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -72,7 +73,7 @@ export function Home() {
         </div>
       </div>
       <ShowChatContext.Provider value={() => setShowChat(!showChat)}>
-        <div className="w-1/3 h-full mt-3">
+        <div className="w-1/3 h-full mt-3 mr-5">
           <Chat client={streamChat}>
             <div className={showChat ? "hidden" : ""}>
               <ChannelList
@@ -86,7 +87,7 @@ export function Home() {
                 <Window>
                   <CustomChannelHeader/>
                   <MessageList />
-                  <MessageInput />
+                  <MessageInput focus />
                 </Window>
               </Channel>
             </div>
@@ -103,33 +104,39 @@ function Channels({ loadedChannels }: ChannelListMessengerProps) {
   const {setActiveChannel, channel: activeChannel} = useChatContext();
   const navigate = useNavigate();
   const toggleChatHandler = useContext(ShowChatContext);
+  const { t, userLanguage } = useTranslationContext('ChannelPreview');
   return (
-    <div className="flex flex-col gap-1 h-full">
+    <div className="flex flex-col h-full">
       <div className="flex justify-between str-chat__header-livestream str-chat__channel-header">
-        <h1 className="font-semibold">Collaboration Sessions</h1>
+        <h1 className="font-semibold text-lg">Collaboration Sessions</h1>
         <button onClick={() => {navigate("/channel/new")}}>
           <Add />
         </button>
       </div>
-      <div className="m-5">
+      <div className="pl-10 pr-10 pt-8 light-blue-bg h-full rounded-bottom-corner" >
       {loadedChannels != null && loadedChannels.length > 0
         ? loadedChannels.map(channel => {
           const isActive = channel === activeChannel;
           const extraClasses = isActive
-            ? "bg-blue-500 text-white"
-            : "hover:blue-100 bg-gray-100";
+            ? "bg-blue-500 text-white dark-blue-bg"
+            : "hover:blue-100 bg-gray-200";
+          const messagePrefix = channel.state.messages.length > 0 ? channel.state.messages[channel.state.messages.length - 1].user!.name : "";
+          const messagePreview = getLatestMessagePreview(channel, t, userLanguage);
           return <button
             onClick={() => {
               setActiveChannel(channel);
               toggleChatHandler();
             }}
-            className={`p-4 rounded-lg flex gap-2 items-center w-full mb-3 ${extraClasses}`}
+            className={`p-4 rounded-lg gap-2 mb-3 text-left w-full ${extraClasses}`}
             key={channel.id}
             >
-              {channel.data?.image
-                && <img src={channel.data.image} className="w-10 h-10 rounded-full object-center object-cover"/>}
-              <div className="text-elipsis overflow-hidden whitespace-nowrap">
-                {channel.data?.name || channel.id}
+              <div>
+                <div className="text-elipsis font-semibold overflow-hidden whitespace-nowrap">
+                  {channel.data?.name || channel.id}
+                </div>
+                <div className="preview flex gap-1 text-sm overflow-hidden text-elipsis whitespace-nowrap">
+                  {messagePrefix}{messagePrefix && ": "}{messagePreview}
+                </div>
               </div>
             </button>
         })
