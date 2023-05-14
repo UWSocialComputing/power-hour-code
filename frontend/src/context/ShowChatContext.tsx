@@ -1,3 +1,3 @@
 import { createContext } from 'react';
 
-export const ShowChatContext = createContext(() => {console.log("Temp context!")});
+export const ShowChatContext = createContext((s: string) => {console.log(s)});

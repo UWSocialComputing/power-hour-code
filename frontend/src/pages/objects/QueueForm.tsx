@@ -12,7 +12,7 @@ import Modal from '@mui/material/Modal';
 import Button from '@mui/material/Button';
 
 
-export default function QueueForm(props:any) {
+export default function QueueForm(props: any) {
   const questionTypesArr = ["conceptual", "debugging", "question wording"]
   const [questionType, setQuestionType] = React.useState("");
   const [question, setQuestion] = React.useState("");
@@ -30,7 +30,6 @@ export default function QueueForm(props:any) {
     setOnlineInPerson("Online");
     setOpenToCollaborate(true);
     setIsMissingFields(true);
-
   }
 
   const handleCancelPost = () => {
@@ -79,7 +78,7 @@ export default function QueueForm(props:any) {
               }
               </Select>
             </FormControl>
-            
+
             <TextField
               InputProps={{ disableUnderline: true }}
               required
@@ -106,7 +105,7 @@ export default function QueueForm(props:any) {
                 label="In Person"
                 color="primary"
                 onClick={() => setOnlineInPerson("In Person")}
-              /> 
+              />
             </Stack>
 
             <Stack direction="row" spacing={1}>
@@ -129,7 +128,7 @@ export default function QueueForm(props:any) {
 
 
             <Stack justifyContent="end" direction="row" spacing={1}>
-              <Button 
+              <Button
                 disableElevation
                 size="small"
                 variant={isMissingFields ? "disabled": "contained"}
@@ -137,7 +136,7 @@ export default function QueueForm(props:any) {
               >
                 Post
               </Button>
-              <Button 
+              <Button
                 disableElevation
                 size="small"
                 variant='outlined'

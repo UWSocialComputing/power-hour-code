@@ -69,4 +69,20 @@ export async function userRoutes(app: FastifyInstance) {
     await streamChat.revokeUserToken(id, new Date());
     TOKEN_USER_ID_MAP.delete(token);
   });
+
+  app.post<{
+    Body: {
+      channelId: string;
+    }
+  }>("/sendBotMessage", async (req, res) => {
+    const channelId = req.body.channelId;
+    if (channelId === null || channelId === "") {
+      return res.status(400).send();
+    }
+    const channel = streamChat.channel("messaging", channelId);
+    await channel.sendMessage({
+      text: "Hi there! Welcome to a new collaboration session! As a reminder, here is the collaboration policy for CSE 311: ... Happy collaborating!",
+      user_id: "bot"
+    });
+  })
 }

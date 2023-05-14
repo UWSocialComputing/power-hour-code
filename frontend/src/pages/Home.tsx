@@ -22,6 +22,7 @@ import StatisticCards from "./objects/StatisticCards";
 import { ArrowBack, Add } from "@mui/icons-material";
 import { useContext, useState } from "react";
 import { ShowChatContext } from "../context/ShowChatContext";
+import { CreateChatView } from "./objects/CreateChatView";
 
 interface Data {
   name: string,
@@ -60,7 +61,8 @@ const isCurrentUser = (row: Data) => row.name == currentUser;
 
 export function Home() {
   const {user, streamChat} = useLoggedInAuth();
-  const [showChat, setShowChat] = useState(false);
+  // channels: channel list, chat: chat view, new: create chat view
+  const [showChat, setShowChat] = useState("channels");
   if (streamChat == null) return <LoadingIndicator />;
   return (
   <div className="h-full">
@@ -72,17 +74,20 @@ export function Home() {
           <Queue rowData={rowDataTemp}/>
         </div>
       </div>
-      <ShowChatContext.Provider value={() => setShowChat(!showChat)}>
+      <ShowChatContext.Provider value={(view) => setShowChat(view)}>
         <div className="w-1/3 h-full mt-3 mr-5">
           <Chat client={streamChat}>
-            <div className={showChat ? "hidden" : ""}>
+            <div className={showChat === "new" ? "" : "hidden"}>
+              <CreateChatView />
+            </div>
+            <div className={showChat === "channels" ? "" : "hidden"}>
               <ChannelList
                 List={Channels}
                 sendChannelsToList
                 filters={{members: {$in: [user.id]}}}
               />
             </div>
-            <div className={!showChat ? "hidden" : ""}>
+            <div className={showChat === "chat" ? "" : "hidden"}>
               <Channel>
                 <Window>
                   <CustomChannelHeader/>
@@ -109,7 +114,7 @@ function Channels({ loadedChannels }: ChannelListMessengerProps) {
     <div className="flex flex-col h-full">
       <div className="flex justify-between str-chat__header-livestream str-chat__channel-header">
         <h1 className="font-semibold text-lg">Collaboration Sessions</h1>
-        <button onClick={() => {navigate("/channel/new")}}>
+        <button onClick={() => {toggleChatHandler("new")}}>
           <Add />
         </button>
       </div>
@@ -125,7 +130,7 @@ function Channels({ loadedChannels }: ChannelListMessengerProps) {
           return <button
             onClick={() => {
               setActiveChannel(channel);
-              toggleChatHandler();
+              toggleChatHandler("chat");
             }}
             className={`p-4 rounded-lg gap-2 mb-3 text-left w-full ${extraClasses}`}
             key={channel.id}
@@ -159,7 +164,7 @@ function CustomChannelHeader(props: ChannelHeaderProps) {
   const toggleChatHandler = useContext(ShowChatContext);
   return (
     <div className='str-chat__header-livestream str-chat__channel-header'>
-      <button aria-label='Back' className="mr-5" onClick={toggleChatHandler}>
+      <button aria-label='Back' className="mr-5" onClick={() => toggleChatHandler("channels")}>
         <ArrowBack />
       </button>
       <div className='str-chat__header-livestream-left str-chat__channel-header-end'>
@@ -174,7 +179,7 @@ function CustomChannelHeader(props: ChannelHeaderProps) {
           {!live && !!member_count && member_count > 0 && (
             <>
               {t('{{ memberCount }} members', {
-                memberCount: member_count,
+                memberCount: member_count - 1, // remove OH bot from count
               })}
               ,{' '}
             </>

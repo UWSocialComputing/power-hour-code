@@ -35,6 +35,7 @@
 .str-chat__header-livestream {
   background-color: #1976d2 !important;
   color: white !important;
+  border-radius: var(--border-radius-md) var(--border-radius-md) 0 0;
 }
 
 .dark-blue-bg {

@@ -150,7 +150,7 @@ export default function ReactVirtualizedTable(props: any) {
           itemContent={rowContent}
         />
       </Paper>
-       <QueueForm setShowForm={setShowForm} showForm={showForm}/>:
+       <QueueForm setShowForm={setShowForm} showForm={showForm}/>
     </>
   );
 }

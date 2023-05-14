@@ -13,6 +13,7 @@ type AuthContext = {
   signup: UseMutationResult<AxiosResponse, unknown, User>
   login: UseMutationResult<{token: string, user: User}, unknown, LoginInfo>,
   logout: UseMutationResult<AxiosResponse, unknown, void>,
+  sendBotMessage: UseMutationResult<AxiosResponse, unknown, string>,
 };
 
 type User = {
@@ -82,7 +83,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setToken(undefined);
       setStreamChat(undefined);
     }
-  })
+  });
+
+  const sendBotMessage = useMutation({
+    mutationFn: (channelId: string) => {
+      return axios.post(`${import.meta.env.VITE_SERVER_URL}/sendBotMessage`, {channelId});
+    }
+  });
 
   useEffect(() => {
     // do nothing if user invalid
@@ -113,7 +120,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       })
     }
   }, [token, user]);
-  return <Context.Provider value={{ signup, login, user, streamChat, logout}}>
+  return <Context.Provider value={{ signup, login, user, streamChat, logout, sendBotMessage}}>
     {children}
   </Context.Provider>
 }
