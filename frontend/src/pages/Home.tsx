@@ -14,91 +14,107 @@ import {
   useTranslationContext,
   getLatestMessagePreview,
 } from "stream-chat-react";
+import * as React from 'react';
 import { useLoggedInAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import Queue from "./objects/Queue";
+import QueueTable from "./objects/QueueTable";
 import PowerHourAppBar from "./objects/PowerHourAppBar";
 import StatisticCards from "./objects/StatisticCards";
 import { ArrowBack, Add } from "@mui/icons-material";
 import { useContext, useState } from "react";
 import { ShowChatContext } from "../context/ShowChatContext";
 import { CreateChatView } from "./objects/CreateChatView";
+import Button from "@mui/material/Button";
+import QueueForm from './objects/QueueForm';
 
-interface Data {
-  name: string,
-  timestamp: string,
-  questionType: string,
-  question: string,
-  InPersonOnline: string,
-  status: string,
-  OpenToCollaboration: boolean,
-  Editable: boolean
-}
 
 function createData(
+  id: string,
   name: string,
   timestamp: string,
   questionType: string,
   question: string,
   InPersonOnline: string,
   status: string,
-  OpenToCollaboration: boolean,
-  Editable: boolean
-) : Data {
-  return { name, timestamp, questionType, question, InPersonOnline, status, OpenToCollaboration, Editable };
+  openToCollaboration: boolean,
+) {
+  return { id, name, timestamp, questionType, question, InPersonOnline, status, openToCollaboration };
 }
 
-const rowDataTemp = [
-  createData('Kevin Feng', "2:25:30", "Debugging",  "Question 5 b", "In Person", "Being helped", true, false),
-  createData('Amanda Ha', "2:34:30", "Conceptual", "Question 5 b", "In Person", "Waiting", true, false),
-  createData('Andrea Ha', "2:35:30", "Debugging",  "Question 5 b", "In Person", "Waiting", true, false),
-  createData('Wen Qiu', "2:36:20", "Debugging", "Question 5 b", "In Person", "Waiting", true, true),
-  createData('Sonia Fereidooni', "2:38:10", "Debugging", "Question 6", "Online", "Waiting", false, false),
+const rows = [
+  createData('andrea','Andrea Ha', "2:35:30", "Debugging",  "Question 5", "In Person", "Waiting", false),
+  createData('wenq','Wen Qiu', "2:36:20", "Debugging", "Question 5", "In Person", "Waiting", true),
+  createData('luckyqxw', 'Lucky', "2:38:10", "Debugging", "Question 6", "Online", "Waiting", true),
 ];
 
+
 const currentUser = "Wen Qiu"
-const isCurrentUser = (row: Data) => row.name == currentUser;
+const isCurrentUser = (row: any) => row.name == currentUser;
 
 export function Home() {
   const {user, streamChat} = useLoggedInAuth();
   // channels: channel list, chat: chat view, new: create chat view
   const [showChat, setShowChat] = useState("channels");
+
+  const [showForm, setShowForm] = React.useState(false);
+  const [isJoined, setIsJoined] = React.useState(false);
+  const [collaborators, setCollaborators] = React.useState<string[]>([]); 
+  
   if (streamChat == null) return <LoadingIndicator />;
   return (
-  <div className="h-full">
+  <div className="h-screen">
     <PowerHourAppBar/>
     <div className="flex h-full">
-      <div className="w-2/3 m-10">
-        <StatisticCards waitTime={rowDataTemp.findIndex(isCurrentUser)*10} studentsAhead={rowDataTemp.findIndex(isCurrentUser)} activeSessions={1}/>
-        <div className="mt-10">
-          <Queue rowData={rowDataTemp}/>
-        </div>
+      <div className="w-2/3 mt-3 ml-5 mr-5">
+        <StatisticCards
+          waitTime={rows.findIndex(isCurrentUser)*10}
+          studentsAhead={rows.findIndex(isCurrentUser)}
+          activeSessions={1}
+        />
+        <Button
+          disableElevation
+          onClick={() => setShowForm(true)}
+          variant={isJoined? "outlined" : "contained"}>
+          {isJoined? "Edit Information" : "Join Queue"}
+        </Button>
+        <QueueTable
+          showChat={showChat} setShowChat={setShowChat}
+          sJoined={isJoined} setIsJoined={setIsJoined}
+          collaborators={collaborators} setCollaborators={setCollaborators}
+          rows={rows}
+        />
+        <QueueForm 
+          isJoined={isJoined} setIsJoined={setIsJoined} 
+          showForm={showForm} setShowForm={setShowForm} 
+        />
       </div>
-      <ShowChatContext.Provider value={(view) => setShowChat(view)}>
-        <div className="w-1/3 h-full mt-3 mr-5">
-          <Chat client={streamChat}>
-            <div className={showChat === "new" ? "" : "hidden"}>
-              <CreateChatView />
-            </div>
-            <div className={showChat === "channels" ? "" : "hidden"}>
-              <ChannelList
-                List={Channels}
-                sendChannelsToList
-                filters={{members: {$in: [user.id]}}}
-              />
-            </div>
-            <div className={showChat === "chat" ? "" : "hidden"}>
-              <Channel>
-                <Window>
-                  <CustomChannelHeader/>
-                  <MessageList />
-                  <MessageInput focus />
-                </Window>
-              </Channel>
-            </div>
-          </Chat>
-        </div>
-      </ShowChatContext.Provider>
+      <div className="w-1/3 mt-3 mr-5">
+        <ShowChatContext.Provider value={(view) => setShowChat(view)}>
+          <>
+            <Chat client={streamChat}>
+              <div className={showChat === "new" ? "" : "hidden"}>
+                <CreateChatView collaborators={collaborators} />
+              </div>
+              <div className={showChat === "channels" ? "" : "hidden"}>
+                <ChannelList
+                  List={Channels}
+                  sendChannelsToList
+                  filters={{members: {$in: [user.id]}}}
+                />
+              </div>
+              <div className={showChat === "chat" ? "" : "hidden"}>
+                <Channel>
+                  <Window>
+                    <CustomChannelHeader/>
+                    <MessageList />
+                    <MessageInput focus />
+                  </Window>
+                </Channel>
+              </div>
+            </Chat>
+          </>
+        </ShowChatContext.Provider>
+      </div>
     </div>
   </div>
   )

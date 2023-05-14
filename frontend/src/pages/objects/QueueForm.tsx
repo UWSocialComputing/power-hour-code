@@ -32,15 +32,15 @@ export default function QueueForm(props: any) {
     setIsMissingFields(true);
   }
 
-  const handleCancelPost = () => {
+  const handleCancel = () => {
     props.setShowForm(false);
     clearFormValues();
   };
 
-  const handlePost = () => {
+  const handleJoin = () => {
     if (!isMissingFields) {
       props.setShowForm(false);
-      console.log("make post call");
+      props.setIsJoined(true);
       clearFormValues();
     }
   };
@@ -51,10 +51,10 @@ export default function QueueForm(props: any) {
         open={props.showForm}
         onClose={() => props.setShowForm(false)}
       >
-        <Box className="bg-white w-1/3 p-7 rounded-md translate-y-1/2 translate-x-1/2 " >
+        <Box className="bg-white w-1/3 p-7 rounded-md translate-y-1/3 = translate-x-1/2 " >
            <Stack spacing={2}>
             <Typography id="modal-modal-title" variant="h6" component="h2">
-              Join Queue
+              Your Information
             </Typography>
 
             <FormControl size="small" variant="filled">
@@ -90,10 +90,11 @@ export default function QueueForm(props: any) {
               onChange={(e:any) => setQuestion(e.target.value)}
             />
 
+            <Typography variant="subtitle1">
+              Are you currently online or in-person?
+            </Typography>
+
             <Stack direction="row" spacing={1}>
-              <Typography variant="subtitle1">
-                Are you currently online or in-person?
-              </Typography>
               <Chip
                 variant={onlineInPerson === "Online" ? "filled": "outlined"}
                 label="Online"
@@ -108,10 +109,10 @@ export default function QueueForm(props: any) {
               />
             </Stack>
 
+            <Typography variant="subtitle1">
+              Are you open to collaborate?
+            </Typography>
             <Stack direction="row" spacing={1}>
-              <Typography variant="subtitle1">
-                Are you open to collaborate?
-              </Typography>
               <Chip
                 variant={openToCollaborate ? "filled": "outlined"}
                 label="Yes"
@@ -126,21 +127,20 @@ export default function QueueForm(props: any) {
               />
             </Stack>
 
-
             <Stack justifyContent="end" direction="row" spacing={1}>
               <Button
                 disableElevation
                 size="small"
-                variant={isMissingFields ? "disabled": "contained"}
-                onClick={handlePost}
+                variant={isMissingFields? "disabled": "contained"}
+                onClick={handleJoin}
               >
-                Post
+                Join
               </Button>
               <Button
                 disableElevation
                 size="small"
                 variant='outlined'
-                onClick={handleCancelPost}
+                onClick={handleCancel}
               >
                 Cancel
               </Button>

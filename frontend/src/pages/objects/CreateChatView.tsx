@@ -5,7 +5,7 @@ import { ShowChatContext } from "../../context/ShowChatContext";
 import { ArrowBack } from "@mui/icons-material";
 import { FormControl, TextField, Button, InputLabel, Select, SelectChangeEvent, MenuItem, Stack } from "@mui/material";
 
-export function CreateChatView() {
+export function CreateChatView(props: any) {
   const { streamChat, user, sendBotMessage} = useLoggedInAuth();
   const [sessionName, setSessionName] = useState<string>("");
   const [members, setMembers] = useState<string[]>([]);
@@ -16,6 +16,10 @@ export function CreateChatView() {
   useEffect(() => {
     setIsMissingFields(sessionName === "" || members.length === 0)
   }, [sessionName, members]);
+
+  useEffect(() => {
+    setMembers(props.collaborators)
+  }, [props.collaborators]);
 
   // useMutation when a call to server will change the state
   const createChannel = useMutation({
@@ -96,16 +100,17 @@ export function CreateChatView() {
               onChange={handleSelectChange}
             >
               {
-              users.data?.users
-                .filter((user) => {return user.id !== "bot"})
-                .map(user => {
-                return <MenuItem
-                  key={user.id}
-                  value={user.id}
-                  >
-                    {user.name ? user.name : user.id}
-                  </MenuItem>
-              })}
+                users.data?.users
+                  .filter((user) => {return user.id !== "bot"})
+                  .map(user => {
+                  return <MenuItem
+                    key={user.id}
+                    value={user.id}
+                    >
+                      {user.name ? user.name : user.id}
+                    </MenuItem>
+                })
+              }
             </Select>
           </FormControl>
           <Stack justifyContent="end" direction="row">
