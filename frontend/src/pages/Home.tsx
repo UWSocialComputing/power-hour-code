@@ -107,7 +107,6 @@ export function Home() {
 function Channels({ loadedChannels }: ChannelListMessengerProps) {
   // provide info about chat
   const {setActiveChannel, channel: activeChannel} = useChatContext();
-  const navigate = useNavigate();
   const toggleChatHandler = useContext(ShowChatContext);
   const { t, userLanguage } = useTranslationContext('ChannelPreview');
   return (
@@ -118,7 +117,7 @@ function Channels({ loadedChannels }: ChannelListMessengerProps) {
           <Add />
         </button>
       </div>
-      <div className="pl-10 pr-10 pt-8 light-blue-bg h-full rounded-bottom-corner" >
+      <div className="pl-10 pr-10 pt-8 light-blue-bg h-full rounded-bottom-corner scroll-on-overflow" >
       {loadedChannels != null && loadedChannels.length > 0
         ? loadedChannels.map(channel => {
           const isActive = channel === activeChannel;

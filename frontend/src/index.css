@@ -72,3 +72,7 @@
 .flex * {
   min-width: 0;
 }
+
+.scroll-on-overflow {
+  overflow: scroll;
+}
