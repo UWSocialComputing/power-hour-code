@@ -12,6 +12,7 @@ import Stack from '@mui/material/Stack';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Modal from '@mui/material/Modal'
+import CircleIcon from '@mui/icons-material/Circle';
 
 const currentUser = "Wen Qiu"
 
@@ -38,10 +39,10 @@ export default function QueueTable(props:any) {
           <TableRow>
             <TableCell>Name</TableCell>
             <TableCell>Timestamp</TableCell>
+            <TableCell>Status</TableCell>
             <TableCell>Question Type</TableCell>
             <TableCell>Question</TableCell>
             <TableCell>In Person/Online</TableCell>
-            <TableCell>Status</TableCell>
             <TableCell>Open to Collaborate</TableCell>
             <TableCell></TableCell>
           </TableRow>
@@ -57,17 +58,23 @@ export default function QueueTable(props:any) {
                 {row.name}
               </TableCell>
               <TableCell>{row.timestamp}</TableCell>
+              <TableCell>
+                <div className={row.status == "Waiting"? "text-amber-600" : "text-indigo-500" }>
+                <CircleIcon className="mr-2 mb-0.5" sx={{width: "10px", height: "10px"}}/>
+                {row.status} 
+                </div> 
+              </TableCell>
               <TableCell>{row.questionType}</TableCell>
               <TableCell>{row.question}</TableCell>
               <TableCell>{row.InPersonOnline}</TableCell>
-              <TableCell>{row.status}</TableCell>
               <TableCell>                
                 <Button
+                  color="success"
                   disabled={currentUser == row.name || !row.openToCollaboration}
                   disableElevation
                   onClick={() => handleCollaborate(row.id)}
                   size="small"
-                  variant={row.openToCollaboration? "contained" : "outlined" }>
+                  variant={currentUser == row.name? "outlined" : "contained" }>
                   {row.openToCollaboration? "Collaborate" : "Independent"}
                 </Button>
               </TableCell>

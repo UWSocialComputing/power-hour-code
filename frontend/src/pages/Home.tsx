@@ -42,15 +42,10 @@ function createData(
 }
 
 const rows = [
-  createData('andrea','Andrea Ha', "2:35:30", "Debugging",  "Question 5", "In Person", "Waiting", true),
-  createData('wenq','Wen Qiu', "2:36:20", "Debugging", "Question 5", "In Person", "Waiting", true),
-  createData('luckyqxw', 'Lucky', "2:38:10", "Debugging", "Question 6", "Online", "Waiting", true),
-  createData('user1', 'Fake User 1', "2:38:10", "Debugging", "Question 6", "Online", "Waiting", true),
-  createData('user2', 'Fake User 2', "2:38:10", "Debugging", "Question 6", "Online", "Waiting", false),
-  createData('user3', 'Fake User 3', "2:38:10", "Debugging", "Question 6", "Online", "Waiting", true),
-  createData('user4', 'Fake User 4', "2:38:10", "Debugging", "Question 6", "Online", "Waiting", true),
-  createData('user5', 'Fake User 5', "2:38:10", "Debugging", "Question 6", "Online", "Waiting", true),
-  createData('user6', 'Fake User 6', "2:38:10", "Debugging", "Question 6", "Online", "Waiting", true),
+  createData('andrea','Andrea Ha', "2:35:30", "Debugging",  "Question 5", "In Person", "In Progress", true),
+  createData('luckyqxw', 'luckyqxw', "2:36:10", "Debugging", "Question 6", "Online", "Waiting", false),
+  createData('kevin', 'Kevin Feng', "2:37:20", "Debugging", "Question 6", "Online", "Waiting", true),
+  createData('wenq','Wen Qiu', "2:38:20", "Debugging", "Question 5", "In Person", "Waiting", true),
 ];
 
 
