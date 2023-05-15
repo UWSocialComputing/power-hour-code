@@ -1,3 +1,78 @@
+@import 'stream-chat-react/dist/css/index.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.str-chat {
+  height: 90vh !important;
+}
+
+.str-chat__message-reactions {
+  margin-top: 3px !important;
+}
+
+.str-chat__reaction-list--counter {
+  margin-top: -10px !important;
+}
+
+.str-chat-channel-list {
+  float: none !important;
+}
+
+.str-chat-channel.messaging .str-chat__main-panel {
+  padding: 0 !important;
+  background-color: transparent !important;
+}
+
+.str-chat.messaging {
+  background-color: white !important;
+}
+
+.logout-btn {
+  color: white !important;
+}
+
+.str-chat__header-livestream {
+  background-color: #1976d2 !important;
+  color: white !important;
+  border-radius: var(--border-radius-md) var(--border-radius-md) 0 0;
+}
+
+.dark-blue-bg {
+  background-color: #1976d2 !important;
+}
+
+.light-blue-bg {
+  background-color: aliceblue !important;
+}
+
+.rounded-bottom-corner {
+  border-radius: 0 0 var(--border-radius-md) var(--border-radius-md);
+}
+
+.str-chat__main-panel {
+  background-color: aliceblue !important;
+  border-radius: 0 0 var(--border-radius-md) var(--border-radius-md);
+}
+
+.messaging.str-chat .str-chat__list, .str-chat__input-flat {
+  background-color: aliceblue !important;
+}
+
+.str-chat__input-flat {
+  border-radius: 0 0 var(--border-radius-md) var(--border-radius-md);
+}
+
+.preview p {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.flex * {
+  min-width: 0;
+}
+
+.scroll-on-overflow {
+  overflow: scroll;
+}

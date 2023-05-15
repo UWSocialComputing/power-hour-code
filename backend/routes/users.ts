@@ -13,11 +13,13 @@ export async function userRoutes(app: FastifyInstance) {
     Body: {
       id: string;
       name: string;
-      image?: string
+      password: string
     }
   }>("/signup", async (req, res) => {
-    const {id, name, image} = req.body;
-    if (id === null || id === "" || name === null || name === "") {
+    const {id, name, password} = req.body;
+    if (id === null || id === ""
+      || name === null || name === ""
+      || password == null || password === "") {
       return res.status(400).send();
     }
     // check for existing users, make sure there are no duplicates
@@ -25,21 +27,22 @@ export async function userRoutes(app: FastifyInstance) {
     if (existingUsers.users.length > 0) {
       return res.status(400).send("User ID taken");
     }
-    await streamChat.upsertUser({ id, name, image });
+    await streamChat.upsertUser({ id, name, password });
   });
 
   app.post<{
     Body: {
       id: string;
+      password: string;
     }
   }>("/login", async (req, res) => {
-    const { id } = req.body;
-    if (id === null || id === "") {
+    const { id, password } = req.body;
+    if (id === null || id === "" || password == "null" || password === "") {
       return res.status(400).send();
     }
 
     const {users: [user]} = await streamChat.queryUsers({id});
-    if (user == null) {
+    if (user == null || user.password !== password) {
       return res.status(401).send();
     }
 
@@ -47,7 +50,7 @@ export async function userRoutes(app: FastifyInstance) {
     TOKEN_USER_ID_MAP.set(token, user.id);
     return {
       token,
-      user: {name: user.name, id: user.id, image: user.image},
+      user: {name: user.name, id: user.id, password: user.password},
     }
   });
 
@@ -66,4 +69,20 @@ export async function userRoutes(app: FastifyInstance) {
     await streamChat.revokeUserToken(id, new Date());
     TOKEN_USER_ID_MAP.delete(token);
   });
+
+  app.post<{
+    Body: {
+      channelId: string;
+    }
+  }>("/sendBotMessage", async (req, res) => {
+    const channelId = req.body.channelId;
+    if (channelId === null || channelId === "") {
+      return res.status(400).send();
+    }
+    const channel = streamChat.channel("messaging", channelId);
+    await channel.sendMessage({
+      text: "Hi there! Welcome to a new collaboration session! As a reminder, here is the collaboration policy for CSE 311: ... Happy collaborating!",
+      user_id: "bot"
+    });
+  })
 }

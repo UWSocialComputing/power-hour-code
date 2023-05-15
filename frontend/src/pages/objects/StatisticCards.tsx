@@ -8,8 +8,8 @@ export default function StatisticCards(props:any) {
   let waitTimeCardColor = props.waitTime > 30 ? "#FF8A7A" : props.waitTime > 20 ? "#F8C7A6" : props.waitTime > 10 ? "#F7DD8D": "#D1F5BE" 
   
   return (
-    <div style={{display: "flex", justifyContent: "space-between"}}>
-      <Card  sx={{outline: "#ecedf0 solid 1px", padding: "0px 40px 0px 40px", backgroundColor: waitTimeCardColor}}>
+    <div className="h-1/6 mb-8 grid grid-cols-3 gap-4 place-content-stretch">
+      <Card className="outline outline-slate-200 outline-1" sx={{backgroundColor: waitTimeCardColor}}>
         <CardContent>
           <Typography component="div" variant="h5">
             Estimated Wait
@@ -19,7 +19,7 @@ export default function StatisticCards(props:any) {
           </Typography>
         </CardContent>
       </Card>
-      <Card sx={{outline: "#ecedf0 solid 1px", padding: "0px 40px 0px 40px", backgroundColor: "#f6f6f6"}}>
+      <Card className="outline outline-slate-200 outline-1">
         <CardContent>
           <Typography component="div" variant="h5">
             Students Ahead
@@ -29,7 +29,7 @@ export default function StatisticCards(props:any) {
           </Typography>
         </CardContent>
       </Card>
-      <Card sx={{outline: "#ecedf0 solid 1px", padding: "0px 40px 0px 40px", backgroundColor: "#f6f6f6"}}>
+      <Card className="outline outline-slate-200 outline-1">
         <CardContent>
           <Typography component="div" variant="h5">
             Active Sessions

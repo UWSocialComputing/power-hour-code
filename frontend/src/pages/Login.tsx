@@ -7,6 +7,7 @@ import { Navigate } from "react-router-dom";
 export function Login() {
   const { login, user } = useAuth();
   const usernameRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
 
   if (user != null) {
     return <Navigate to="/" />
@@ -16,11 +17,12 @@ export function Login() {
 
     if (login.isLoading) return;
     const username = usernameRef.current?.value;
+    const password = passwordRef.current?.value;
 
-    if (username == null || username === "" ) {
+    if (username == null || username === "" || password == null || password === "") {
       return;
     }
-    login.mutate(username);
+    login.mutate({id: username, password: password});
   }
 
   return (
@@ -32,6 +34,8 @@ export function Login() {
       >
         <label htmlFor="userName">Username</label>
         <Input id="userName" required ref={usernameRef} />
+        <label htmlFor="password">Password</label>
+        <Input id="password" type="password" required ref={passwordRef} />
         <Button disabled={login.isLoading} type="submit" className="col-span-full">
           {login.isLoading ? "Loading..." : "Log in"}
         </Button>
