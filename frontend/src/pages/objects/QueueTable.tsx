@@ -5,7 +5,6 @@ import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
-import Paper from '@mui/material/Paper';
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 import RemoveCircleIcon from '@mui/icons-material/RemoveCircle';
@@ -22,20 +21,19 @@ export default function QueueTable(props:any) {
   const handleLeaveQueue = () => {
     setShowLeaveModal(false);
     props.setIsJoined(false);
-    console.log("delete")
   }
 
-  const handleCollaborate = (collaboratorId: any) => {
-    let collaboratorsList = [...props.collaborators, collaboratorId];
-    collaboratorsList = collaboratorsList.filter((value, index, array) => array.indexOf(value) === index);
-    props.setCollaborators(collaboratorsList)
-    props.setShowChat("new")
+  const handleCollaborate = (memberId: any) => {
+    let membersList = [...props.members, memberId];
+    membersList = membersList.filter((value, index, array) => array.indexOf(value) === index);
+    props.setMembers(membersList);
+    props.setShowChat("new");
   }
 
   return (
     <>
-    <TableContainer component={Paper} className="h-4/6 mt-2 scroll-on-overflow">
-      <Table sx={{ minWidth: 650 }} aria-label="simple table">
+    <TableContainer component={Box} className="h-[62vh] mt-2 scroll-on-overflow rounded outline outline-gray-100">
+      <Table className="table-auto w-full text-sm" sx={{ minWidth: 650 }} aria-label="simple table">
         <TableHead className="sticky top-0 z-50 bg-gray-100">
           <TableRow>
             <TableCell>Name</TableCell>
@@ -44,13 +42,14 @@ export default function QueueTable(props:any) {
             <TableCell>Question</TableCell>
             <TableCell>In Person/Online</TableCell>
             <TableCell>Status</TableCell>
-            <TableCell>Collaborate</TableCell>
+            <TableCell>Open to Collaborate</TableCell>
             <TableCell></TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {props.rows.map((row: any) => (
             <TableRow
+              className={row.name == currentUser ? !props.isJoined? "collapse" : "" + "bg-[#eff8ff]": ""}
               key={row.id}
               sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
             >
@@ -62,13 +61,14 @@ export default function QueueTable(props:any) {
               <TableCell>{row.question}</TableCell>
               <TableCell>{row.InPersonOnline}</TableCell>
               <TableCell>{row.status}</TableCell>
-              <TableCell>
-                <Button 
+              <TableCell>                
+                <Button
+                  disabled={currentUser == row.name || !row.openToCollaboration}
                   disableElevation
                   onClick={() => handleCollaborate(row.id)}
                   size="small"
-                  variant={row.openToCollaboration ? "contained" : "disabled"}>
-                  Collaborate
+                  variant={row.openToCollaboration? "contained" : "outlined" }>
+                  {row.openToCollaboration? "Collaborate" : "Independent"}
                 </Button>
               </TableCell>
               <TableCell align="right"> 

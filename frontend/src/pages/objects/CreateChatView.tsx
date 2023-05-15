@@ -8,18 +8,15 @@ import { FormControl, TextField, Button, InputLabel, Select, SelectChangeEvent, 
 export function CreateChatView(props: any) {
   const { streamChat, user, sendBotMessage} = useLoggedInAuth();
   const [sessionName, setSessionName] = useState<string>("");
-  const [members, setMembers] = useState<string[]>([]);
   const toggleChatHandler = useContext(ShowChatContext);
   const [isMissingFields, setIsMissingFields] = useState(true);
   const [newChannelId, setNewChannelId] = useState<string>("");
 
-  useEffect(() => {
-    setIsMissingFields(sessionName === "" || members.length === 0)
-  }, [sessionName, members]);
 
   useEffect(() => {
-    setMembers(props.collaborators)
-  }, [props.collaborators]);
+    setIsMissingFields(sessionName === "" || props.members.length === 0)
+  }, [sessionName, props.members]);
+
 
   // useMutation when a call to server will change the state
   const createChannel = useMutation({
@@ -35,7 +32,7 @@ export function CreateChatView(props: any) {
     },
     async onSuccess() {
       setSessionName("");
-      setMembers([]);
+      props.setMembers([]);
       // send bot message on collaboration policy
       sendBotMessage.mutate(newChannelId);
       setNewChannelId("");
@@ -55,7 +52,7 @@ export function CreateChatView(props: any) {
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
     const name = sessionName;
-    const selectOptions = members;
+    const selectOptions = props.members;
     if (name == null || name === "" || selectOptions == null || selectOptions.length === 0) {
       return;
     }
@@ -63,7 +60,7 @@ export function CreateChatView(props: any) {
     // Create a channel with the given info
     createChannel.mutate({
       name,
-      memberIds: members
+      memberIds: props.members
     });
   }
 
@@ -71,14 +68,14 @@ export function CreateChatView(props: any) {
     const {
       target: {value},
     } = event;
-    setMembers(
+    props.setMembers(
       typeof value === 'string' ? value.split(',') : value
     );
   };
 
   return <div className="str-chat">
       <div className='str-chat__header-livestream'>
-        <button aria-label='Back' className="mr-5" onClick={() => toggleChatHandler("channels")}>
+        <button aria-label='Back' className="mr-5" onClick={() => {toggleChatHandler("channels"); props.setMembers([]); setSessionName("")}}>
           <ArrowBack />
         </button>
         <h1 className="font-semibold text-lg">New Session</h1>
@@ -96,7 +93,7 @@ export function CreateChatView(props: any) {
           <FormControl size="small" variant="filled">
             <InputLabel id="members">Members</InputLabel>
             <Select
-              value={members} labelId="members" required multiple
+              value={props.members} labelId="members" required multiple
               onChange={handleSelectChange}
             >
               {

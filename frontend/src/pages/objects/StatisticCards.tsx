@@ -9,7 +9,7 @@ export default function StatisticCards(props:any) {
   
   return (
     <div className="h-1/6 mb-8 grid grid-cols-3 gap-4 place-content-stretch">
-      <Card className="outline outline-slate-200 outline-1" sx={{backgroundColor: waitTimeCardColor}}>
+      <Card variant="outlined" sx={{backgroundColor: waitTimeCardColor}}>
         <CardContent>
           <Typography component="div" variant="h5">
             Estimated Wait
@@ -19,7 +19,7 @@ export default function StatisticCards(props:any) {
           </Typography>
         </CardContent>
       </Card>
-      <Card className="outline outline-slate-200 outline-1">
+      <Card variant="outlined">
         <CardContent>
           <Typography component="div" variant="h5">
             Students Ahead
@@ -29,10 +29,10 @@ export default function StatisticCards(props:any) {
           </Typography>
         </CardContent>
       </Card>
-      <Card className="outline outline-slate-200 outline-1">
+      <Card variant="outlined">
         <CardContent>
           <Typography component="div" variant="h5">
-            Active Sessions
+            Your Sessions
           </Typography>
           <Typography component="div" variant="h3">
             {props.activeSessions}

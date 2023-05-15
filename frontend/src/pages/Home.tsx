@@ -42,9 +42,15 @@ function createData(
 }
 
 const rows = [
-  createData('andrea','Andrea Ha', "2:35:30", "Debugging",  "Question 5", "In Person", "Waiting", false),
+  createData('andrea','Andrea Ha', "2:35:30", "Debugging",  "Question 5", "In Person", "Waiting", true),
   createData('wenq','Wen Qiu', "2:36:20", "Debugging", "Question 5", "In Person", "Waiting", true),
   createData('luckyqxw', 'Lucky', "2:38:10", "Debugging", "Question 6", "Online", "Waiting", true),
+  createData('user1', 'Fake User 1', "2:38:10", "Debugging", "Question 6", "Online", "Waiting", true),
+  createData('user2', 'Fake User 2', "2:38:10", "Debugging", "Question 6", "Online", "Waiting", false),
+  createData('user3', 'Fake User 3', "2:38:10", "Debugging", "Question 6", "Online", "Waiting", true),
+  createData('user4', 'Fake User 4', "2:38:10", "Debugging", "Question 6", "Online", "Waiting", true),
+  createData('user5', 'Fake User 5', "2:38:10", "Debugging", "Question 6", "Online", "Waiting", true),
+  createData('user6', 'Fake User 6', "2:38:10", "Debugging", "Question 6", "Online", "Waiting", true),
 ];
 
 
@@ -58,14 +64,14 @@ export function Home() {
 
   const [showForm, setShowForm] = React.useState(false);
   const [isJoined, setIsJoined] = React.useState(false);
-  const [collaborators, setCollaborators] = React.useState<string[]>([]); 
+  const [members, setMembers] = React.useState<string[]>([]);
   
   if (streamChat == null) return <LoadingIndicator />;
   return (
   <div className="h-screen">
     <PowerHourAppBar/>
     <div className="flex h-full">
-      <div className="w-2/3 mt-3 ml-5 mr-5">
+      <div className="w-2/3 mt-3 ml-5 mr-3">
         <StatisticCards
           waitTime={rows.findIndex(isCurrentUser)*10}
           studentsAhead={rows.findIndex(isCurrentUser)}
@@ -79,8 +85,8 @@ export function Home() {
         </Button>
         <QueueTable
           showChat={showChat} setShowChat={setShowChat}
-          sJoined={isJoined} setIsJoined={setIsJoined}
-          collaborators={collaborators} setCollaborators={setCollaborators}
+          isJoined={isJoined} setIsJoined={setIsJoined}
+          members={members} setMembers={setMembers}
           rows={rows}
         />
         <QueueForm 
@@ -93,7 +99,7 @@ export function Home() {
           <>
             <Chat client={streamChat}>
               <div className={showChat === "new" ? "" : "hidden"}>
-                <CreateChatView collaborators={collaborators} />
+                <CreateChatView members={members} setMembers={setMembers} />
               </div>
               <div className={showChat === "channels" ? "" : "hidden"}>
                 <ChannelList
