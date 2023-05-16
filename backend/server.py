@@ -5,7 +5,10 @@ from flask_cors import CORS
 from datetime import datetime
 import pytz
 import os
+from dotenv import load_dotenv
 
+
+load_dotenv()
 app = Flask(__name__)
 firebase = firebase.FirebaseApplication('https://power-hour-3d428-default-rtdb.firebaseio.com/', None)
 chat_client = StreamChat(api_key=os.environ.get("STREAM_API_KEY"), api_secret=os.environ.get("STREAM_PRIVATE_API_KEY"))

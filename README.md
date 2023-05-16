@@ -12,6 +12,7 @@ In `backend` folder, first install [anaconda](https://www.anaconda.com/), then s
 Run `flask --app server run --debug` to start the backend server.
 
 # Testing the app
+First run backend `server.py`, then run backend `npm run dev`, then run frontend `npm run dev`.
 Valid usernames include (passwords are all abc):
 wenq, andrea, amanda, kevin
 
