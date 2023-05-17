@@ -28,6 +28,18 @@ def sendBotMessage():
     }, "bot")
     return "Message sent"
 
+@app.route('/leave-queue', methods=['POST'])
+def leaveQueue():
+    body = request.json
+    if missing_fields(body, ["id"]):
+        return "Missing required parameters", 400
+    id = body["id"]
+    current_queue = firebase.get("/queue", None)
+    if current_queue:
+        for entry in current_queue:
+            if current_queue[entry]["id"] == id:
+                current_queue[entry].delete()
+
 
 @app.route('/join-queue', methods=['POST'])
 def joinQueue():
