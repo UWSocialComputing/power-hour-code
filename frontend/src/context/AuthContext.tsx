@@ -14,6 +14,8 @@ type AuthContext = {
   login: UseMutationResult<{token: string, user: User}, unknown, LoginInfo>,
   logout: UseMutationResult<AxiosResponse, unknown, void>,
   sendBotMessage: UseMutationResult<AxiosResponse, unknown, string>,
+  joinQueue: UseMutationResult<AxiosResponse, unknown, JoinQueueInfo>,
+  leaveQueue: UseMutationResult<AxiosResponse, unknown, string>,
 };
 
 type User = {
@@ -25,6 +27,15 @@ type User = {
 type LoginInfo = {
   id: string,
   password: string
+}
+
+type JoinQueueInfo = {
+  InPersonOnline: string,
+  id: string,
+  name: string,
+  openToCollaboration: boolean,
+  question: string,
+  questionType: string
 }
 
 const Context = createContext<AuthContext | null>(null);
@@ -91,6 +102,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   });
 
+  const joinQueue = useMutation({
+    mutationFn: (joinQueueInfo: JoinQueueInfo) => {
+      return axios.post(`${import.meta.env.VITE_SERVER_URL}/join-queue`, joinQueueInfo);
+    }
+  });
+
+  const leaveQueue = useMutation({
+    mutationFn: (id: string) => {
+      return axios.post(`${import.meta.env.VITE_SERVER_URL}/leave-queue`, {id});
+    }
+  });
+
   useEffect(() => {
     // do nothing if user invalid
     if (token == null || user == null) return;
@@ -120,7 +143,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       })
     }
   }, [token, user]);
-  return <Context.Provider value={{ signup, login, user, streamChat, logout, sendBotMessage}}>
+  return <Context.Provider value={{ signup, login, user, streamChat, logout, sendBotMessage, joinQueue, leaveQueue}}>
     {children}
   </Context.Provider>
 }

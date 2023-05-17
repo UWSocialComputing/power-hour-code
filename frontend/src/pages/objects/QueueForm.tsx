@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useLoggedInAuth } from "../../context/AuthContext";
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
@@ -13,6 +14,7 @@ import Button from '@mui/material/Button';
 
 
 export default function QueueForm(props: any) {
+  const { joinQueue } = useLoggedInAuth();
   const questionTypesArr = ["conceptual", "debugging", "question wording"]
   const [questionType, setQuestionType] = React.useState("");
   const [question, setQuestion] = React.useState("");
@@ -39,6 +41,17 @@ export default function QueueForm(props: any) {
 
   const handleJoin = () => {
     if (!isMissingFields) {
+
+      joinQueue.mutate({
+        InPersonOnline: "In Person",
+        id: "sonj",
+        name: "sonia f",
+        openToCollaboration: true,
+        question: "Question 5",
+        questionType: "Debugging"
+      })
+
+      console.log("join mutate")
       props.setShowForm(false);
       props.setIsJoined(true);
       clearFormValues();

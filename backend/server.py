@@ -55,6 +55,9 @@ def joinQueue():
     status = "Waiting"
     timestamp = datetime.now(pytz.timezone("America/Los_Angeles"))
     current_queue = firebase.get("/queue", None)
+    for entry in current_queue:
+        print("entry")
+        print(current_queue[entry])
     if current_queue:
       for entry in current_queue:
         if current_queue[entry]["id"] == id:

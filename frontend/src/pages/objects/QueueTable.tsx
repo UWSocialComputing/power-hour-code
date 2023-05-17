@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useLoggedInAuth } from "../../context/AuthContext";
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -17,9 +18,13 @@ import CircleIcon from '@mui/icons-material/Circle';
 const currentUser = "Wen Qiu"
 
 export default function QueueTable(props:any) {
+  const { leaveQueue } = useLoggedInAuth();
   const [showLeaveModal, setShowLeaveModal] = React.useState(false);
 
   const handleLeaveQueue = () => {
+    leaveQueue.mutate("sonj");
+    console.log("mutate leave queue")
+
     setShowLeaveModal(false);
     props.setIsJoined(false);
   }
