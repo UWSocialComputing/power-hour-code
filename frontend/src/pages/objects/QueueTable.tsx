@@ -61,13 +61,13 @@ export default function QueueTable(props:any) {
               <TableCell>
                 <div className={row.status == "Waiting"? "text-amber-600" : "text-indigo-500" }>
                 <CircleIcon className="mr-2 mb-0.5" sx={{width: "10px", height: "10px"}}/>
-                {row.status} 
-                </div> 
+                {row.status}
+                </div>
               </TableCell>
               <TableCell>{row.questionType}</TableCell>
               <TableCell>{row.question}</TableCell>
               <TableCell>{row.InPersonOnline}</TableCell>
-              <TableCell>                
+              <TableCell>
                 <Button
                   color="success"
                   disabled={currentUser == row.name || !row.openToCollaboration}
@@ -78,7 +78,7 @@ export default function QueueTable(props:any) {
                   {row.openToCollaboration? "Collaborate" : "Independent"}
                 </Button>
               </TableCell>
-              <TableCell align="right"> 
+              <TableCell align="right">
                 {row.name == currentUser ?
                   <IconButton onClick={()=> setShowLeaveModal(true)} color="primary" component="label">
                     <RemoveCircleIcon fontSize="small" color="error"/>
@@ -112,7 +112,7 @@ export default function QueueTable(props:any) {
               onClick={handleLeaveQueue}>
               Leave
             </Button>
-            <Button 
+            <Button
               disableElevation size="small"
               variant='outlined'
               onClick={()=> setShowLeaveModal(false)}

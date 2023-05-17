@@ -3,7 +3,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useLoggedInAuth } from "../../context/AuthContext";
 import { ShowChatContext } from "../../context/ShowChatContext";
 import { ArrowBack } from "@mui/icons-material";
-import { FormControl, TextField, Button, InputLabel, Select, SelectChangeEvent, MenuItem, Stack } from "@mui/material";
+import { FormControl, TextField, Button, InputLabel, Select, SelectChangeEvent, MenuItem, Stack, FormHelperText } from "@mui/material";
 
 export function CreateChatView(props: any) {
   const { streamChat, user, sendBotMessage} = useLoggedInAuth();
@@ -12,11 +12,15 @@ export function CreateChatView(props: any) {
   const [isMissingFields, setIsMissingFields] = useState(true);
   const [newChannelId, setNewChannelId] = useState<string>("");
 
-
   useEffect(() => {
-    setIsMissingFields(sessionName === "" || props.members.length === 0)
+    setIsMissingFields(sessionName === "" || props.members.length === 0);
   }, [sessionName, props.members]);
 
+  useEffect(() => {
+    // TODO: look up the real names for people in the queue rather than
+    // displaying the username, could be done using contexts
+    setSessionName(props.members.join(","));
+  }, [props.members]);
 
   // useMutation when a call to server will change the state
   const createChannel = useMutation({
@@ -68,6 +72,7 @@ export function CreateChatView(props: any) {
     const {
       target: {value},
     } = event;
+    setSessionName(value);
     props.setMembers(
       typeof value === 'string' ? value.split(',') : value
     );
@@ -109,6 +114,7 @@ export function CreateChatView(props: any) {
                 })
               }
             </Select>
+            <FormHelperText>You can also use collaborate buttons in the table to add members</FormHelperText>
           </FormControl>
           <Stack justifyContent="end" direction="row">
             <Button disableElevation

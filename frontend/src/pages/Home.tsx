@@ -16,16 +16,16 @@ import {
 } from "stream-chat-react";
 import * as React from 'react';
 import { useLoggedInAuth } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
 import QueueTable from "./objects/QueueTable";
 import PowerHourAppBar from "./objects/PowerHourAppBar";
 import StatisticCards from "./objects/StatisticCards";
-import { ArrowBack, Add } from "@mui/icons-material";
+import { ArrowBack, Add, People } from "@mui/icons-material";
 import { useContext, useState } from "react";
 import { ShowChatContext } from "../context/ShowChatContext";
 import { CreateChatView } from "./objects/CreateChatView";
 import Button from "@mui/material/Button";
 import QueueForm from './objects/QueueForm';
+import { Card, CardContent } from "@mui/material";
 
 
 function createData(
@@ -60,7 +60,7 @@ export function Home() {
   const [showForm, setShowForm] = React.useState(false);
   const [isJoined, setIsJoined] = React.useState(false);
   const [members, setMembers] = React.useState<string[]>([]);
-  
+
   if (streamChat == null) return <LoadingIndicator />;
   return (
   <div className="h-screen">
@@ -84,9 +84,9 @@ export function Home() {
           members={members} setMembers={setMembers}
           rows={rows}
         />
-        <QueueForm 
-          isJoined={isJoined} setIsJoined={setIsJoined} 
-          showForm={showForm} setShowForm={setShowForm} 
+        <QueueForm
+          isJoined={isJoined} setIsJoined={setIsJoined}
+          showForm={showForm} setShowForm={setShowForm}
         />
       </div>
       <div className="w-1/3 mt-3 mr-5">
@@ -108,7 +108,7 @@ export function Home() {
                   <Window>
                     <CustomChannelHeader/>
                     <MessageList />
-                    <MessageInput focus />
+                    <MessageInput />
                   </Window>
                 </Channel>
               </div>
@@ -178,9 +178,18 @@ function CustomChannelHeader(props: ChannelHeaderProps) {
   });
   const { member_count, subtitle } = channel?.data || {};
   const toggleChatHandler = useContext(ShowChatContext);
+  const [memberListOpen, setMemberListOpen] = React.useState(false);
+
+  const toggleMemberList = (open: boolean) => {
+    setMemberListOpen(open);
+  };
+
   return (
     <div className='str-chat__header-livestream str-chat__channel-header'>
-      <button aria-label='Back' className="mr-5" onClick={() => toggleChatHandler("channels")}>
+      <button aria-label='Back' className="mr-5" onClick={() => {
+        toggleMemberList(false);
+        toggleChatHandler("channels");
+      }}>
         <ArrowBack />
       </button>
       <div className='str-chat__header-livestream-left str-chat__channel-header-end'>
@@ -203,6 +212,40 @@ function CustomChannelHeader(props: ChannelHeaderProps) {
           {t<string>('{{ watcherCount }} online', { watcherCount: watcher_count })}
         </p>
       </div>
+      <button onClick={() => toggleMemberList(!memberListOpen)}>
+        <People />
+      </button>
+      <Card className={memberListOpen ? "member-info" : "hidden"}>
+        <CardContent>
+          <MemberList />
+        </CardContent>
+      </Card>
     </div>
   );
 }
+
+const MemberList = () => {
+  const { channel } = useChannelStateContext();
+  const [channelUsers, setChannelUsers] = useState<Array<{ name: string; online: boolean }>>([]);
+
+  React.useEffect(() => {
+    const updateChannelUsers = () => {
+      setChannelUsers(
+        Object.values(channel.state.members).map((user) => ({
+          name: user.user!.name! ? user.user!.name! : user.user_id!,
+          online: !!user.user!.online,
+        })),
+      );
+    };
+    updateChannelUsers();
+  }, [channel]);
+  return (
+    <ul className='users-list'>
+      {channelUsers.filter((member) => {return member.name !== "OH Bot"}).map((member) => (
+        <li key={member.name}>
+          {member.name} - {member.online ? 'active' : 'inactive'}
+        </li>
+      ))}
+    </ul>
+  );
+};

@@ -76,3 +76,9 @@
 .scroll-on-overflow {
   overflow: scroll;
 }
+
+.member-info {
+  position: absolute;
+  right: 5px;
+  top: 75px;
+}
