@@ -15,18 +15,23 @@ chat_client = StreamChat(api_key=os.environ.get("STREAM_API_KEY"), api_secret=os
 TOKEN_USER_ID_MAP = {}
 CORS(app, resources={r"/*": {"origins": "*"}})
 app.config['CORS_HEADERS'] = 'Content-Type'
+IN_QUEUE_STATUSES = ["Waiting", "In Progress"]
 
 
-@app.route('/sendBotMessage', methods=['POST'])
-def sendBotMessage():
-    body = request.json
-    if missing_fields(body, ["channelId"]):
-        return "Missing required parameters", 400
-    channel = chat_client.channel("messaging", body["channelId"])
-    channel.send_message({
-        "text": "Hi there! Welcome to a new collaboration session! As a reminder, here is the collaboration policy for CSE 311: ... Happy collaborating!",
-    }, "bot")
-    return "Message sent"
+# takes in optional parameter type, if /get-queue-data?type=queue, then only waiting and in progress records are
+# returned
+@app.route('/get-queue-data', methods=['GET'])
+def getQueueData():
+    current_queue = firebase.get("/queue", None)
+    queue_data = []
+    for entry in current_queue:
+        if request.args.get("type", "") == "":
+            queue_data.append(current_queue[entry])
+        elif request.args.get("type", "") == "" or \
+            (request.args.get("type", "") == "queue" and current_queue[entry]["status"] in IN_QUEUE_STATUSES):
+            queue_data.append(current_queue[entry])
+    return queue_data
+
 
 @app.route('/leave-queue', methods=['POST'])
 def leaveQueue():
@@ -36,10 +41,17 @@ def leaveQueue():
     id = body["id"]
     current_queue = firebase.get("/queue", None)
     if current_queue:
+        found_entry = None
         for entry in current_queue:
-            if current_queue[entry]["id"] == id:
-                current_queue[entry].delete()
-
+            if current_queue[entry]["id"] == id and current_queue[entry]["status"] == "Waiting":
+              found_entry = entry
+        if found_entry is not None:
+            firebase.delete("/queue", found_entry)
+            return "successfully left queue"
+        else:
+            return "user does not have an active request in queue", 400
+    else:
+        return "queue is empty", 400
 
 @app.route('/join-queue', methods=['POST'])
 def joinQueue():
@@ -55,9 +67,6 @@ def joinQueue():
     status = "Waiting"
     timestamp = datetime.now(pytz.timezone("America/Los_Angeles"))
     current_queue = firebase.get("/queue", None)
-    for entry in current_queue:
-        print("entry")
-        print(current_queue[entry])
     if current_queue:
       for entry in current_queue:
         if current_queue[entry]["id"] == id:
@@ -65,7 +74,6 @@ def joinQueue():
     new_entry = {"inPersonOnline": inPersonOnline, "id": id, "name": name, "openToCollaboration": openToCollaboration,
                  "question": question, "questionType": questionType, "status": status, "timestamp": timestamp}
     firebase.post("/queue", new_entry)
-
 
 
 @app.route('/logout', methods=['POST'])
@@ -137,6 +145,18 @@ def signup():
     # Add user to streamchat
     chat_client.upsert_users([{"id": username, "password": password, "name": name}])
     return "New student added!"
+
+
+@app.route('/sendBotMessage', methods=['POST'])
+def sendBotMessage():
+    body = request.json
+    if missing_fields(body, ["channelId"]):
+        return "Missing required parameters", 400
+    channel = chat_client.channel("messaging", body["channelId"])
+    channel.send_message({
+        "text": "Hi there! Welcome to a new collaboration session! As a reminder, here is the collaboration policy for CSE 311: ... Happy collaborating!",
+    }, "bot")
+    return "Message sent"
 
 
 def missing_fields(d, fields):
