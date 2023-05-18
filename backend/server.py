@@ -15,18 +15,78 @@ chat_client = StreamChat(api_key=os.environ.get("STREAM_API_KEY"), api_secret=os
 TOKEN_USER_ID_MAP = {}
 CORS(app, resources={r"/*": {"origins": "*"}})
 app.config['CORS_HEADERS'] = 'Content-Type'
+IN_QUEUE_STATUSES = ["Waiting", "In Progress"]
 
 
-@app.route('/sendBotMessage', methods=['POST'])
-def sendBotMessage():
+@app.route('/get-wait-time', methods=['GET'])
+def getWaitTime():
+    # TODO: complete wait time logic
+    return '30'
+
+
+@app.route('/start-help', methods=['POST'])
+def startHelp():
     body = request.json
-    if missing_fields(body, ["channelId"]):
+    if missing_fields(body, ["id"]):
         return "Missing required parameters", 400
-    channel = chat_client.channel("messaging", body["channelId"])
-    channel.send_message({
-        "text": "Hi there! Welcome to a new collaboration session! As a reminder, here is the collaboration policy for CSE 311: ... Happy collaborating!",
-    }, "bot")
-    return "Message sent"
+    id = body["id"]
+    current_queue = firebase.get("/queue", None)
+    if current_queue:
+        found_entry = None
+        for entry in current_queue:
+            if current_queue[entry]["id"] == id and current_queue[entry]["status"] == "Waiting":
+              found_entry = entry
+        current_queue[found_entry]["status"] = "In Progress"
+        if found_entry is not None:
+            firebase.patch(f"/queue", current_queue)
+            return f"successfully started helping student {current_queue[found_entry]['name']}"
+        else:
+            return "user is not waiting in queue", 400
+    else:
+        return "queue is empty", 400
+
+
+@app.route('/end-help', methods=['POST'])
+def endHelp():
+    body = request.json
+    if missing_fields(body, ["id"]):
+        return "Missing required parameters", 400
+    id = body["id"]
+    current_queue = firebase.get("/queue", None)
+    if current_queue:
+        found_entry = None
+        for entry in current_queue:
+            if current_queue[entry]["id"] == id and current_queue[entry]["status"] == "In Progress":
+              found_entry = entry
+        current_queue[found_entry]["status"] = "Helped"
+        if found_entry is not None:
+            firebase.patch(f"/queue", current_queue)
+            return f"successfully finish helping student {current_queue[found_entry]['name']}"
+        else:
+            return "user is being helped in queue", 400
+    else:
+        return "queue is empty", 400
+
+
+# takes in optional parameter type, if /get-queue-data?type=queue, then only waiting and in progress records are
+# returned
+@app.route('/get-queue-data', methods=['GET'])
+def getQueueData():
+    current_queue = firebase.get("/queue", None)
+    queue_data = []
+    for entry in current_queue:
+        parsed_datetime = datetime.strptime(current_queue[entry]["timestamp"].split(".")[0], "%Y-%m-%dT%H:%M:%S")
+        current_queue[entry]["timestamp"] = parsed_datetime
+        if request.args.get("type", "") == "":
+            queue_data.append(current_queue[entry])
+        elif request.args.get("type", "") == "" or \
+            (request.args.get("type", "") == "queue" and current_queue[entry]["status"] in IN_QUEUE_STATUSES):
+            queue_data.append(current_queue[entry])
+    queue_data.sort(key=lambda i: i["timestamp"])
+    for record in queue_data:
+        record["timestamp"] = record["timestamp"].strftime("%H:%M:%S")
+    return queue_data
+
 
 @app.route('/leave-queue', methods=['POST'])
 def leaveQueue():
@@ -36,17 +96,24 @@ def leaveQueue():
     id = body["id"]
     current_queue = firebase.get("/queue", None)
     if current_queue:
+        found_entry = None
         for entry in current_queue:
-            if current_queue[entry]["id"] == id:
-                current_queue[entry].delete()
-
+            if current_queue[entry]["id"] == id and current_queue[entry]["status"] == "Waiting":
+              found_entry = entry
+        if found_entry is not None:
+            firebase.delete("/queue", found_entry)
+            return "successfully left queue"
+        else:
+            return "user does not have an active request in queue", 400
+    else:
+        return "queue is empty", 400
 
 @app.route('/join-queue', methods=['POST'])
 def joinQueue():
     body = request.json
-    if missing_fields(body, ["InPersonOnline", "id", "name", "openToCollaboration", "question", "questionType"]):
+    if missing_fields(body, ["inPersonOnline", "id", "name", "openToCollaboration", "question", "questionType"]):
         return "Missing required parameters", 400
-    inPersonOnline = body["InPersonOnline"]
+    inPersonOnline = body["inPersonOnline"]
     id = body["id"]
     name = body["name"]
     openToCollaboration = body["openToCollaboration"]
@@ -57,12 +124,12 @@ def joinQueue():
     current_queue = firebase.get("/queue", None)
     if current_queue:
       for entry in current_queue:
-        if current_queue[entry]["id"] == id:
+        if current_queue[entry]["id"] == id and current_queue[entry]["status"] == "Waiting":
           return "Username already in queue", 400
     new_entry = {"inPersonOnline": inPersonOnline, "id": id, "name": name, "openToCollaboration": openToCollaboration,
                  "question": question, "questionType": questionType, "status": status, "timestamp": timestamp}
     firebase.post("/queue", new_entry)
-
+    return "Successfully joined queue"
 
 
 @app.route('/logout', methods=['POST'])
@@ -134,6 +201,18 @@ def signup():
     # Add user to streamchat
     chat_client.upsert_users([{"id": username, "password": password, "name": name}])
     return "New student added!"
+
+
+@app.route('/sendBotMessage', methods=['POST'])
+def sendBotMessage():
+    body = request.json
+    if missing_fields(body, ["channelId"]):
+        return "Missing required parameters", 400
+    channel = chat_client.channel("messaging", body["channelId"])
+    channel.send_message({
+        "text": "Hi there! Welcome to a new collaboration session! As a reminder, here is the collaboration policy for CSE 311: ... Happy collaborating!",
+    }, "bot")
+    return "Message sent"
 
 
 def missing_fields(d, fields):

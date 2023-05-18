@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useLoggedInAuth } from "../../context/AuthContext";
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -14,12 +15,13 @@ import Typography from '@mui/material/Typography';
 import Modal from '@mui/material/Modal'
 import CircleIcon from '@mui/icons-material/Circle';
 
-const currentUser = "Wen Qiu"
-
 export default function QueueTable(props:any) {
-  const [showLeaveModal, setShowLeaveModal] = React.useState(false);
+  const { user, leaveQueue } = useLoggedInAuth();
 
+  const [showLeaveModal, setShowLeaveModal] = React.useState(false);
+  
   const handleLeaveQueue = () => {
+    leaveQueue.mutate(user.id);
     setShowLeaveModal(false);
     props.setIsJoined(false);
   }
@@ -43,14 +45,14 @@ export default function QueueTable(props:any) {
             <TableCell>Question Type</TableCell>
             <TableCell>Question</TableCell>
             <TableCell>In Person/Online</TableCell>
-            <TableCell>Open to Collaborate</TableCell>
+            <TableCell>Open to Collaboration</TableCell>
             <TableCell></TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {props.rows.map((row: any) => (
             <TableRow
-              className={row.name == currentUser ? !props.isJoined? "collapse" : "" + "bg-[#eff8ff]": ""}
+              className={row.id == user.id ? "bg-[#eff8ff]": ""}
               key={row.id}
               sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
             >
@@ -66,20 +68,20 @@ export default function QueueTable(props:any) {
               </TableCell>
               <TableCell>{row.questionType}</TableCell>
               <TableCell>{row.question}</TableCell>
-              <TableCell>{row.InPersonOnline}</TableCell>
+              <TableCell>{row.inPersonOnline}</TableCell>
               <TableCell>
                 <Button
                   color="success"
-                  disabled={currentUser == row.name || !row.openToCollaboration}
+                  disabled={row.id == user.id || !row.openToCollaboration}
                   disableElevation
                   onClick={() => handleCollaborate(row.id)}
                   size="small"
-                  variant={currentUser == row.name? "outlined" : "contained" }>
+                  variant={row.id == user.id? "outlined" : "contained" }>
                   {row.openToCollaboration? "Collaborate" : "Independent"}
                 </Button>
               </TableCell>
               <TableCell align="right">
-                {row.name == currentUser ?
+                {row.id == user.id ?
                   <IconButton onClick={()=> setShowLeaveModal(true)} color="primary" component="label">
                     <RemoveCircleIcon fontSize="small" color="error"/>
                   </IconButton>:

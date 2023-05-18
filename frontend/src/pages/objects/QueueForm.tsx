@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useLoggedInAuth } from "../../context/AuthContext";
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
@@ -13,22 +14,23 @@ import Button from '@mui/material/Button';
 
 
 export default function QueueForm(props: any) {
+  const { user, joinQueue } = useLoggedInAuth();
   const questionTypesArr = ["conceptual", "debugging", "question wording"]
   const [questionType, setQuestionType] = React.useState("");
   const [question, setQuestion] = React.useState("");
-  const [onlineInPerson, setOnlineInPerson] = React.useState("Online");
-  const [openToCollaborate, setOpenToCollaborate] = React.useState(true);
+  const [inPersonOnline, setInPersonOnline] = React.useState("Online");
+  const [openToCollaboration, setOpenToCollaboration] = React.useState(true);
   const [isMissingFields, setIsMissingFields] = React.useState(true);
 
   React.useEffect(() => {
     setIsMissingFields(questionType === "" || question === "")
-  }, [questionType, question, onlineInPerson, openToCollaborate]);
+  }, [questionType, question, inPersonOnline, openToCollaboration]);
 
   const clearFormValues = () => {
     setQuestionType("");
     setQuestion("");
-    setOnlineInPerson("Online");
-    setOpenToCollaborate(true);
+    setInPersonOnline("Online");
+    setOpenToCollaboration(true);
     setIsMissingFields(true);
   }
 
@@ -39,6 +41,15 @@ export default function QueueForm(props: any) {
 
   const handleJoin = () => {
     if (!isMissingFields) {
+
+      joinQueue.mutate({
+        inPersonOnline: inPersonOnline,
+        id: user.id,
+        name: user.name,
+        openToCollaboration: openToCollaboration,
+        question: question,
+        questionType: questionType
+      })      
       props.setShowForm(false);
       props.setIsJoined(true);
       clearFormValues();
@@ -96,16 +107,16 @@ export default function QueueForm(props: any) {
 
             <Stack direction="row" spacing={1}>
               <Chip
-                variant={onlineInPerson === "Online" ? "filled": "outlined"}
+                variant={inPersonOnline === "Online" ? "filled": "outlined"}
                 label="Online"
                 color="primary"
-                onClick={() => setOnlineInPerson("Online")}
+                onClick={() => setInPersonOnline("Online")}
               />
               <Chip
-                variant={onlineInPerson === "In Person" ? "filled": "outlined"}
+                variant={inPersonOnline === "In Person" ? "filled": "outlined"}
                 label="In Person"
                 color="primary"
-                onClick={() => setOnlineInPerson("In Person")}
+                onClick={() => setInPersonOnline("In Person")}
               />
             </Stack>
 
@@ -114,16 +125,16 @@ export default function QueueForm(props: any) {
             </Typography>
             <Stack direction="row" spacing={1}>
               <Chip
-                variant={openToCollaborate ? "filled": "outlined"}
+                variant={openToCollaboration ? "filled": "outlined"}
                 label="Yes"
                 color="primary"
-                onClick={() => setOpenToCollaborate(true)}
+                onClick={() => setOpenToCollaboration(true)}
               />
               <Chip
-                variant={!openToCollaborate ? "filled": "outlined"}
+                variant={!openToCollaboration ? "filled": "outlined"}
                 label="No"
                 color="primary"
-                onClick={() => setOpenToCollaborate(false)}
+                onClick={() => setOpenToCollaboration(false)}
               />
             </Stack>
 

@@ -1,4 +1,10 @@
-import { UseMutationResult, useMutation } from "@tanstack/react-query";
+import { 
+  UseMutationResult, 
+  useMutation,
+  UseQueryResult,
+  useQuery, 
+  useQueryClient
+} from "@tanstack/react-query";
 import axios, {AxiosResponse} from "axios";
 import { createContext, useContext, ReactNode, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -10,10 +16,14 @@ type AuthContext = {
   // data in response, error, value to passed into actual function
   user?: User,
   streamChat?: StreamChat,
+  getWaitTime: UseQueryResult<AxiosResponse>,
   signup: UseMutationResult<AxiosResponse, unknown, User>
   login: UseMutationResult<{token: string, user: User}, unknown, LoginInfo>,
   logout: UseMutationResult<AxiosResponse, unknown, void>,
   sendBotMessage: UseMutationResult<AxiosResponse, unknown, string>,
+  getQueueData: UseQueryResult<AxiosResponse>,
+  joinQueue: UseMutationResult<AxiosResponse, unknown, JoinQueueInfo>,
+  leaveQueue: UseMutationResult<AxiosResponse, unknown, string>,
 };
 
 type User = {
@@ -25,6 +35,15 @@ type User = {
 type LoginInfo = {
   id: string,
   password: string
+}
+
+type JoinQueueInfo = {
+  inPersonOnline: string,
+  id: string,
+  name: string,
+  openToCollaboration: boolean,
+  question: string,
+  questionType: string
 }
 
 const Context = createContext<AuthContext | null>(null);
@@ -45,11 +64,22 @@ type AuthProviderProps = {
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   // Store logged in user and their token in local storage so they will
   // be logged in automatically upon refresh
   const [user, setUser] = useLocalStorage<User>("user");
   const [token, setToken] = useLocalStorage<string>("token");
   const [streamChat, setStreamChat] = useState<StreamChat>();
+
+  const getWaitTime = useQuery({
+    queryKey: ['getWaitTime'],
+    queryFn: () => 
+      axios.get(`${import.meta.env.VITE_SERVER_URL}/get-wait-time`)
+      .then((response) => {
+        return response;
+      }
+   )
+  });
 
   const signup = useMutation({
     mutationFn: (user: User) => {
@@ -91,6 +121,36 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   });
 
+   const getQueueData = useQuery({
+    queryKey: ['getQueueData'],
+    queryFn: () => 
+      axios.get(`${import.meta.env.VITE_SERVER_URL}/get-queue-data`)
+      .then((response) => {
+        return response;
+      }
+   )
+  });
+
+  const joinQueue = useMutation({
+    mutationFn: (joinQueueInfo: JoinQueueInfo) => {
+      return axios.post(`${import.meta.env.VITE_SERVER_URL}/join-queue`, joinQueueInfo);
+    },
+    onSuccess: () => {
+      // Invalidate and refetch
+      queryClient.invalidateQueries({ queryKey: ['getQueueData'] })
+    },
+  });
+
+  const leaveQueue = useMutation({
+    mutationFn: (id: string) => {
+      return axios.post(`${import.meta.env.VITE_SERVER_URL}/leave-queue`, {id});
+    },
+    onSuccess: () => {
+      // Invalidate and refetch
+      queryClient.invalidateQueries({ queryKey: ['getQueueData'] })
+    },
+  });
+
   useEffect(() => {
     // do nothing if user invalid
     if (token == null || user == null) return;
@@ -120,7 +180,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       })
     }
   }, [token, user]);
-  return <Context.Provider value={{ signup, login, user, streamChat, logout, sendBotMessage}}>
+  return <Context.Provider value={{ user, streamChat, getWaitTime, signup, login, logout, sendBotMessage, getQueueData, joinQueue, leaveQueue}}>
     {children}
   </Context.Provider>
 }
