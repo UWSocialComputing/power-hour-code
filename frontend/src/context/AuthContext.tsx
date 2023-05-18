@@ -23,7 +23,8 @@ type AuthContext = {
   logout: UseMutationResult<AxiosResponse, unknown, void>,
   sendBotMessage: UseMutationResult<AxiosResponse, unknown, string>,
   getQueueData: UseQueryResult<AxiosResponse>,
-  joinQueue: UseMutationResult<AxiosResponse, unknown, JoinQueueInfo>,
+  joinQueue: UseMutationResult<AxiosResponse, unknown, QueueEntryInfo>,
+  modifyRequest: UseMutationResult<AxiosResponse, unknown, QueueEntryInfo>,
   leaveQueue: UseMutationResult<AxiosResponse, unknown, string>,
 };
 
@@ -38,7 +39,7 @@ type LoginInfo = {
   password: string
 }
 
-type JoinQueueInfo = {
+type QueueEntryInfo = {
   inPersonOnline: string,
   id: string,
   name: string,
@@ -135,8 +136,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
   });
 
   const joinQueue = useMutation({
-    mutationFn: (joinQueueInfo: JoinQueueInfo) => {
+    mutationFn: (joinQueueInfo: QueueEntryInfo) => {
       return axios.post(`${import.meta.env.VITE_SERVER_URL}/join-queue`, joinQueueInfo);
+    },
+    onSuccess: () => {
+      // Invalidate and refetch
+      queryClient.invalidateQueries({ queryKey: ['getQueueData'] })
+    },
+  });
+
+  const modifyRequest = useMutation({
+    mutationFn: (modifyRequestInfo: QueueEntryInfo) => {
+      return axios.post(`${import.meta.env.VITE_SERVER_URL}/modify-request`, modifyRequestInfo);
     },
     onSuccess: () => {
       // Invalidate and refetch
@@ -183,7 +194,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       })
     }
   }, [token, user]);
-  return <Context.Provider value={{ user, streamChat, loginAfterSignup, getWaitTime, signup, login, logout, sendBotMessage, getQueueData, joinQueue, leaveQueue}}>
+  return <Context.Provider value={{ user, streamChat, loginAfterSignup, getWaitTime, signup, login, logout, sendBotMessage, getQueueData, joinQueue, modifyRequest, leaveQueue}}>
     {children}
   </Context.Provider>
 }

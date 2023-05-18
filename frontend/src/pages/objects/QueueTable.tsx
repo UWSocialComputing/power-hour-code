@@ -61,10 +61,14 @@ export default function QueueTable(props:any) {
               </TableCell>
               <TableCell>{row.timestamp}</TableCell>
               <TableCell>
-                <div className={row.status == "Waiting"? "text-amber-600" : "text-indigo-500" }>
-                <CircleIcon className="mr-2 mb-0.5" sx={{width: "10px", height: "10px"}}/>
-                {row.status}
-                </div>
+                <Typography
+                  noWrap
+                  variant="caption"
+                  display="block"
+                  className={row.status == "Waiting"? "text-amber-600" : "In Progress" ? "text-indigo-500" : "Done" ? "text-emerald-400" : "" }>
+                  <CircleIcon className="mr-2 mb-0.5" sx={{width: "10px", height: "10px"}}/>
+                  {row.status}
+                </Typography>
               </TableCell>
               <TableCell>{row.questionType}</TableCell>
               <TableCell>{row.question}</TableCell>

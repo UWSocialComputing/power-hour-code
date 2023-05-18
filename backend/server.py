@@ -45,30 +45,6 @@ def startHelp():
     else:
         return "queue is empty", 400
 
-
-@app.route('/modify-request', methods=['POST'])
-def modifyRequest():
-    body = request.json
-    if missing_fields(body, ["InPersonOnline", "id", "openToCollaboration", "question", "questionType"]):
-        return "Missing required parameters", 400
-    inPersonOnline = body["InPersonOnline"]
-    id = body["id"]
-    openToCollaboration = body["openToCollaboration"]
-    question = body["question"]
-    questionType = body["questionType"]
-    current_queue = firebase.get("/queue", None)
-    if current_queue:
-        for entry in current_queue:
-            if current_queue[entry]["id"] == id:
-                current_queue[entry]["inPersonOnline"] = inPersonOnline
-                current_queue[entry]["openToCollaboration"] = openToCollaboration
-                current_queue[entry]["question"] = question
-                current_queue[entry]["questionType"] = questionType
-                firebase.patch(f"/queue", current_queue)
-    else:
-        return "queue is empty", 400
-
-
 @app.route('/end-help', methods=['POST'])
 def endHelp():
     body = request.json
@@ -154,6 +130,29 @@ def joinQueue():
                  "question": question, "questionType": questionType, "status": status, "timestamp": timestamp}
     firebase.post("/queue", new_entry)
     return "Successfully joined queue"
+
+@app.route('/modify-request', methods=['POST'])
+def modifyRequest():
+    body = request.json
+    if missing_fields(body, ["inPersonOnline", "id", "openToCollaboration", "question", "questionType"]):
+        return "Missing required parameters", 400
+    inPersonOnline = body["inPersonOnline"]
+    id = body["id"]
+    openToCollaboration = body["openToCollaboration"]
+    question = body["question"]
+    questionType = body["questionType"]
+    current_queue = firebase.get("/queue", None)
+    if current_queue:
+        for entry in current_queue:
+            if current_queue[entry]["id"] == id:
+                current_queue[entry]["inPersonOnline"] = inPersonOnline
+                current_queue[entry]["openToCollaboration"] = openToCollaboration
+                current_queue[entry]["question"] = question
+                current_queue[entry]["questionType"] = questionType
+                firebase.patch(f"/queue", current_queue)
+        return "Successfully edited queue entry"
+    else:
+        return "Queue is empty", 400
 
 
 @app.route('/logout', methods=['POST'])
