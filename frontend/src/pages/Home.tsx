@@ -20,7 +20,7 @@ import QueueTable from "./objects/QueueTable";
 import PowerHourAppBar from "./objects/PowerHourAppBar";
 import StatisticCards from "./objects/StatisticCards";
 import { ArrowBack, Add, People } from "@mui/icons-material";
-import { ShowChatContext } from "../context/ShowChatContext";
+import { CustomChatContext } from "../context/CustomChatContext";
 import { CreateChatView } from "./objects/CreateChatView";
 import Button from "@mui/material/Button";
 import QueueForm from './objects/QueueForm';
@@ -29,13 +29,14 @@ import { Card, CardContent } from "@mui/material";
 export function Home() {
 
   const {user, streamChat, getQueueData, getWaitTime } = useLoggedInAuth();
-  let rowData = getQueueData?.data?.data
+  const rowData = getQueueData?.data?.data;
 
   // channels: channel list, chat: chat view, new: create chat view
   const [showChat, setShowChat] = useState("channels");
   const [showForm, setShowForm] = useState(false);
   const [isJoined, setIsJoined] = useState(rowData?.filter((row: any) => row.id == user.id).length > 0);
   const [members, setMembers] = useState<string[]>([]);
+  const [numSessions, setNumSessions] = useState(0);
 
   if (streamChat == null) return <LoadingIndicator />;
   return (
@@ -46,7 +47,7 @@ export function Home() {
         <StatisticCards
           waitTime={getWaitTime?.data?.data}
           studentsAhead={rowData.findIndex((row: any) => row.id == user.id)}
-          activeSessions={1}
+          activeSessions={numSessions}
         />
         <Button
           disableElevation
@@ -66,7 +67,11 @@ export function Home() {
         />
       </div>
       <div className="w-1/3 mt-3 mr-5">
-        <ShowChatContext.Provider value={(view) => setShowChat(view)}>
+        <CustomChatContext.Provider value={
+          {
+            "toggleChatHandler": (view) => setShowChat(view),
+            "updateSessionHandler": (num) => setNumSessions(num)
+          }}>
           <>
             <Chat client={streamChat}>
               <div className={showChat === "new" ? "" : "hidden"}>
@@ -90,7 +95,7 @@ export function Home() {
               </div>
             </Chat>
           </>
-        </ShowChatContext.Provider>
+        </CustomChatContext.Provider>
       </div>
     </div>
   </div>
@@ -100,8 +105,14 @@ export function Home() {
 function Channels({ loadedChannels }: ChannelListMessengerProps) {
   // provide info about chat
   const {setActiveChannel, channel: activeChannel} = useChatContext();
-  const toggleChatHandler = useContext(ShowChatContext);
+  const toggleChatHandler = useContext(CustomChatContext)["toggleChatHandler"];
+  const updateSessionHandler = useContext(CustomChatContext)["updateSessionHandler"];
   const { t, userLanguage } = useTranslationContext('ChannelPreview');
+  useEffect(() => {
+    if (loadedChannels != null) {
+      updateSessionHandler(loadedChannels.length);
+    }
+  }, [loadedChannels, updateSessionHandler]);
   return (
     <div className="flex flex-col h-full">
       <div className="flex justify-between str-chat__header-livestream str-chat__channel-header">
@@ -153,7 +164,7 @@ function CustomChannelHeader(props: ChannelHeaderProps) {
     overrideTitle,
   });
   const { member_count, subtitle } = channel?.data || {};
-  const toggleChatHandler = useContext(ShowChatContext);
+  const toggleChatHandler = useContext(CustomChatContext)["toggleChatHandler"];
   const [memberListOpen, setMemberListOpen] = useState(false);
 
   const toggleMemberList = (open: boolean) => {

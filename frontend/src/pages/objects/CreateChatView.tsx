@@ -1,14 +1,14 @@
 import { FormEvent, useContext, useState, useEffect } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useLoggedInAuth } from "../../context/AuthContext";
-import { ShowChatContext } from "../../context/ShowChatContext";
+import { CustomChatContext } from "../../context/CustomChatContext";
 import { ArrowBack } from "@mui/icons-material";
 import { FormControl, TextField, Button, InputLabel, Select, SelectChangeEvent, MenuItem, Stack, FormHelperText } from "@mui/material";
 
 export function CreateChatView(props: any) {
   const { streamChat, user, sendBotMessage} = useLoggedInAuth();
   const [sessionName, setSessionName] = useState<string>("");
-  const toggleChatHandler = useContext(ShowChatContext);
+  const toggleChatHandler = useContext(CustomChatContext)["toggleChatHandler"];
   const [isMissingFields, setIsMissingFields] = useState(true);
   const [newChannelId, setNewChannelId] = useState<string>("");
 

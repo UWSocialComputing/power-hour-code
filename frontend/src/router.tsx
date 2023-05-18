@@ -24,9 +24,6 @@ export const router = createBrowserRouter([
         element: <RootLayout />,
         children: [
           { index: true, element: <Home /> },
-          { path: "/channel", children: [
-            { path: "new", element: <NewChannel /> }
-          ]}
         ]
       },
       {

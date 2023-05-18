@@ -1,8 +1,8 @@
-import { 
-  UseMutationResult, 
+import {
+  UseMutationResult,
   useMutation,
   UseQueryResult,
-  useQuery, 
+  useQuery,
   useQueryClient
 } from "@tanstack/react-query";
 import axios, {AxiosResponse} from "axios";
@@ -73,7 +73,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const getWaitTime = useQuery({
     queryKey: ['getWaitTime'],
-    queryFn: () => 
+    queryFn: () =>
       axios.get(`${import.meta.env.VITE_SERVER_URL}/get-wait-time`)
       .then((response) => {
         return response;
@@ -123,7 +123,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
    const getQueueData = useQuery({
     queryKey: ['getQueueData'],
-    queryFn: () => 
+    queryFn: () =>
       axios.get(`${import.meta.env.VITE_SERVER_URL}/get-queue-data`)
       .then((response) => {
         return response;
