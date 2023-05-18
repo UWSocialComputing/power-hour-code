@@ -14,52 +14,28 @@ import {
   useTranslationContext,
   getLatestMessagePreview,
 } from "stream-chat-react";
-import * as React from 'react';
+import { useContext, useState, useEffect } from "react";
 import { useLoggedInAuth } from "../context/AuthContext";
 import QueueTable from "./objects/QueueTable";
 import PowerHourAppBar from "./objects/PowerHourAppBar";
 import StatisticCards from "./objects/StatisticCards";
 import { ArrowBack, Add, People } from "@mui/icons-material";
-import { useContext, useState } from "react";
 import { ShowChatContext } from "../context/ShowChatContext";
 import { CreateChatView } from "./objects/CreateChatView";
 import Button from "@mui/material/Button";
 import QueueForm from './objects/QueueForm';
 import { Card, CardContent } from "@mui/material";
 
-
-function createData(
-  id: string,
-  name: string,
-  timestamp: string,
-  questionType: string,
-  question: string,
-  InPersonOnline: string,
-  status: string,
-  openToCollaboration: boolean,
-) {
-  return { id, name, timestamp, questionType, question, InPersonOnline, status, openToCollaboration };
-}
-
-const rows = [
-  createData('andrea','Andrea Ha', "2:35:30", "Debugging",  "Question 5", "In Person", "In Progress", true),
-  createData('luckyqxw', 'luckyqxw', "2:36:10", "Debugging", "Question 6", "Online", "Waiting", false),
-  createData('kevin', 'Kevin Feng', "2:37:20", "Debugging", "Question 6", "Online", "Waiting", true),
-  createData('wenq','Wen Qiu', "2:38:20", "Debugging", "Question 5", "In Person", "Waiting", true),
-];
-
-
-const currentUser = "Wen Qiu"
-const isCurrentUser = (row: any) => row.name == currentUser;
-
 export function Home() {
-  const {user, streamChat} = useLoggedInAuth();
+
+  const {user, streamChat, getQueueData, getWaitTime } = useLoggedInAuth();
+  let rowData = getQueueData?.data?.data
+
   // channels: channel list, chat: chat view, new: create chat view
   const [showChat, setShowChat] = useState("channels");
-
-  const [showForm, setShowForm] = React.useState(false);
-  const [isJoined, setIsJoined] = React.useState(false);
-  const [members, setMembers] = React.useState<string[]>([]);
+  const [showForm, setShowForm] = useState(false);
+  const [isJoined, setIsJoined] = useState(rowData?.filter((row: any) => row.id == user.id).length > 0);
+  const [members, setMembers] = useState<string[]>([]);
 
   if (streamChat == null) return <LoadingIndicator />;
   return (
@@ -68,8 +44,8 @@ export function Home() {
     <div className="flex h-full">
       <div className="w-2/3 mt-3 ml-5 mr-3">
         <StatisticCards
-          waitTime={rows.findIndex(isCurrentUser)*10}
-          studentsAhead={rows.findIndex(isCurrentUser)}
+          waitTime={getWaitTime?.data?.data}
+          studentsAhead={rowData.findIndex((row: any) => row.id == user.id)}
           activeSessions={1}
         />
         <Button
@@ -82,7 +58,7 @@ export function Home() {
           showChat={showChat} setShowChat={setShowChat}
           isJoined={isJoined} setIsJoined={setIsJoined}
           members={members} setMembers={setMembers}
-          rows={rows}
+          rows={rowData}
         />
         <QueueForm
           isJoined={isJoined} setIsJoined={setIsJoined}
@@ -178,7 +154,7 @@ function CustomChannelHeader(props: ChannelHeaderProps) {
   });
   const { member_count, subtitle } = channel?.data || {};
   const toggleChatHandler = useContext(ShowChatContext);
-  const [memberListOpen, setMemberListOpen] = React.useState(false);
+  const [memberListOpen, setMemberListOpen] = useState(false);
 
   const toggleMemberList = (open: boolean) => {
     setMemberListOpen(open);
@@ -228,7 +204,7 @@ const MemberList = () => {
   const { channel } = useChannelStateContext();
   const [channelUsers, setChannelUsers] = useState<Array<{ name: string; online: boolean }>>([]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const updateChannelUsers = () => {
       setChannelUsers(
         Object.values(channel.state.members).map((user) => ({

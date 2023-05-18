@@ -111,9 +111,9 @@ def leaveQueue():
 @app.route('/join-queue', methods=['POST'])
 def joinQueue():
     body = request.json
-    if missing_fields(body, ["InPersonOnline", "id", "name", "openToCollaboration", "question", "questionType"]):
+    if missing_fields(body, ["inPersonOnline", "id", "name", "openToCollaboration", "question", "questionType"]):
         return "Missing required parameters", 400
-    inPersonOnline = body["InPersonOnline"]
+    inPersonOnline = body["inPersonOnline"]
     id = body["id"]
     name = body["name"]
     openToCollaboration = body["openToCollaboration"]

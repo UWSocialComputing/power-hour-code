@@ -1,4 +1,3 @@
-import * as React from "react";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
@@ -25,7 +24,7 @@ export default function StatisticCards(props:any) {
             Students Ahead
           </Typography>
           <Typography component="div" variant="h3">
-            {props.studentsAhead}
+            { props.studentsAhead == -1 ? 0 : props.studentsAhead }
           </Typography>
         </CardContent>
       </Card>
