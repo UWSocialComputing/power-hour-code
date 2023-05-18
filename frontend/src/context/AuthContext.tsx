@@ -16,6 +16,7 @@ type AuthContext = {
   // data in response, error, value to passed into actual function
   user?: User,
   streamChat?: StreamChat,
+  loginAfterSignup: boolean,
   getWaitTime: UseQueryResult<AxiosResponse>,
   signup: UseMutationResult<AxiosResponse, unknown, User>
   login: UseMutationResult<{token: string, user: User}, unknown, LoginInfo>,
@@ -70,6 +71,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useLocalStorage<User>("user");
   const [token, setToken] = useLocalStorage<string>("token");
   const [streamChat, setStreamChat] = useState<StreamChat>();
+  const [loginAfterSignup, setLoginAfterSignup] = useState(false);
 
   const getWaitTime = useQuery({
     queryKey: ['getWaitTime'],
@@ -86,6 +88,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       return axios.post(`${import.meta.env.VITE_SERVER_URL}/signup`, user);
     },
     onSuccess() {
+      setLoginAfterSignup(true);
       navigate("/login");
     }
   });
@@ -180,7 +183,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       })
     }
   }, [token, user]);
-  return <Context.Provider value={{ user, streamChat, getWaitTime, signup, login, logout, sendBotMessage, getQueueData, joinQueue, leaveQueue}}>
+  return <Context.Provider value={{ user, streamChat, loginAfterSignup, getWaitTime, signup, login, logout, sendBotMessage, getQueueData, joinQueue, leaveQueue}}>
     {children}
   </Context.Provider>
 }
