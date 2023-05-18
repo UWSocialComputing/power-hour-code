@@ -158,24 +158,25 @@ def modifyRequest():
 @app.route('/logout', methods=['POST'])
 def logout():
     body = request.json
-    if missing_fields(body, ["token"]):
+    if missing_fields(body, ["token", "id"]):
         return "Missing required parameters", 400
     token = body["token"]
+    id = body["id"]
     if token not in TOKEN_USER_ID_MAP:
         return "User does not exist for given token", 400
     current_time = datetime.now(pytz.timezone("America/Los_Angeles"))
     chat_client.revoke_user_token(TOKEN_USER_ID_MAP[token], current_time.isoformat())
     # check that the user leaves queue if they are in the queue when they log out
     current_queue = firebase.get("/queue", None)
+    found_entry = None
     if current_queue:
-        found_entry = None
         for entry in current_queue:
             if current_queue[entry]["id"] == id and current_queue[entry]["status"] == "Waiting":
                 found_entry = entry
-        if found_entry:
-            firebase.delete("/queue", found_entry)
+    if found_entry:
+        firebase.delete("/queue", found_entry)
     TOKEN_USER_ID_MAP.pop(token)
-    return "User has been logged out"
+    return "User has been logged out"ß
 
 
 @app.route('/login', methods=['POST'])
