@@ -18,6 +18,56 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 IN_QUEUE_STATUSES = ["Waiting", "In Progress"]
 
 
+@app.route('/get-wait-time', methods=['GET'])
+def getWaitTime():
+    # TODO: complete wait time logic
+    return '30'
+
+
+@app.route('/start-help', methods=['POST'])
+def startHelp():
+    body = request.json
+    if missing_fields(body, ["id"]):
+        return "Missing required parameters", 400
+    id = body["id"]
+    current_queue = firebase.get("/queue", None)
+    if current_queue:
+        found_entry = None
+        for entry in current_queue:
+            if current_queue[entry]["id"] == id and current_queue[entry]["status"] == "Waiting":
+              found_entry = entry
+        current_queue[found_entry]["status"] = "In Progress"
+        if found_entry is not None:
+            firebase.patch(f"/queue", current_queue)
+            return f"successfully started helping student {current_queue[found_entry]['name']}"
+        else:
+            return "user is not waiting in queue", 400
+    else:
+        return "queue is empty", 400
+
+
+@app.route('/end-help', methods=['POST'])
+def endHelp():
+    body = request.json
+    if missing_fields(body, ["id"]):
+        return "Missing required parameters", 400
+    id = body["id"]
+    current_queue = firebase.get("/queue", None)
+    if current_queue:
+        found_entry = None
+        for entry in current_queue:
+            if current_queue[entry]["id"] == id and current_queue[entry]["status"] == "In Progress":
+              found_entry = entry
+        current_queue[found_entry]["status"] = "Helped"
+        if found_entry is not None:
+            firebase.patch(f"/queue", current_queue)
+            return f"successfully finish helping student {current_queue[found_entry]['name']}"
+        else:
+            return "user is being helped in queue", 400
+    else:
+        return "queue is empty", 400
+
+
 # takes in optional parameter type, if /get-queue-data?type=queue, then only waiting and in progress records are
 # returned
 @app.route('/get-queue-data', methods=['GET'])
@@ -25,11 +75,16 @@ def getQueueData():
     current_queue = firebase.get("/queue", None)
     queue_data = []
     for entry in current_queue:
+        parsed_datetime = datetime.strptime(current_queue[entry]["timestamp"].split(".")[0], "%Y-%m-%dT%H:%M:%S")
+        current_queue[entry]["timestamp"] = parsed_datetime
         if request.args.get("type", "") == "":
             queue_data.append(current_queue[entry])
         elif request.args.get("type", "") == "" or \
             (request.args.get("type", "") == "queue" and current_queue[entry]["status"] in IN_QUEUE_STATUSES):
             queue_data.append(current_queue[entry])
+    queue_data.sort(key=lambda i: i["timestamp"])
+    for record in queue_data:
+        record["timestamp"] = record["timestamp"].strftime("%H:%M:%S")
     return queue_data
 
 
@@ -69,11 +124,12 @@ def joinQueue():
     current_queue = firebase.get("/queue", None)
     if current_queue:
       for entry in current_queue:
-        if current_queue[entry]["id"] == id:
+        if current_queue[entry]["id"] == id and current_queue[entry]["status"] == "Waiting":
           return "Username already in queue", 400
     new_entry = {"inPersonOnline": inPersonOnline, "id": id, "name": name, "openToCollaboration": openToCollaboration,
                  "question": question, "questionType": questionType, "status": status, "timestamp": timestamp}
     firebase.post("/queue", new_entry)
+    return "Successfully joined queue"
 
 
 @app.route('/logout', methods=['POST'])
