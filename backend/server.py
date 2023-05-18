@@ -158,10 +158,10 @@ def modifyRequest():
 @app.route('/logout', methods=['POST'])
 def logout():
     body = request.json
-    if missing_fields(body, ["token", "id"]):
+    if missing_fields(body, ["token"]):
         return "Missing required parameters", 400
     token = body["token"]
-    id = body["id"]
+    id = TOKEN_USER_ID_MAP.get(token)
     if token not in TOKEN_USER_ID_MAP:
         return "User does not exist for given token", 400
     current_time = datetime.now(pytz.timezone("America/Los_Angeles"))
