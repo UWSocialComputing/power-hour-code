@@ -35,13 +35,36 @@ def startHelp():
         found_entry = None
         for entry in current_queue:
             if current_queue[entry]["id"] == id and current_queue[entry]["status"] == "Waiting":
-              found_entry = entry
+                found_entry = entry
         current_queue[found_entry]["status"] = "In Progress"
         if found_entry is not None:
             firebase.patch(f"/queue", current_queue)
             return f"successfully started helping student {current_queue[found_entry]['name']}"
         else:
             return "user is not waiting in queue", 400
+    else:
+        return "queue is empty", 400
+
+
+@app.route('/modify-request', methods=['POST'])
+def modifyRequest():
+    body = request.json
+    if missing_fields(body, ["InPersonOnline", "id", "openToCollaboration", "question", "questionType"]):
+        return "Missing required parameters", 400
+    inPersonOnline = body["InPersonOnline"]
+    id = body["id"]
+    openToCollaboration = body["openToCollaboration"]
+    question = body["question"]
+    questionType = body["questionType"]
+    current_queue = firebase.get("/queue", None)
+    if current_queue:
+        for entry in current_queue:
+            if current_queue[entry]["id"] == id:
+                current_queue[entry]["inPersonOnline"] = inPersonOnline
+                current_queue[entry]["openToCollaboration"] = openToCollaboration
+                current_queue[entry]["question"] = question
+                current_queue[entry]["questionType"] = questionType
+                firebase.patch(f"/queue", current_queue)
     else:
         return "queue is empty", 400
 
@@ -57,7 +80,7 @@ def endHelp():
         found_entry = None
         for entry in current_queue:
             if current_queue[entry]["id"] == id and current_queue[entry]["status"] == "In Progress":
-              found_entry = entry
+                found_entry = entry
         current_queue[found_entry]["status"] = "Helped"
         if found_entry is not None:
             firebase.patch(f"/queue", current_queue)
@@ -80,7 +103,7 @@ def getQueueData():
         if request.args.get("type", "") == "":
             queue_data.append(current_queue[entry])
         elif request.args.get("type", "") == "" or \
-            (request.args.get("type", "") == "queue" and current_queue[entry]["status"] in IN_QUEUE_STATUSES):
+                (request.args.get("type", "") == "queue" and current_queue[entry]["status"] in IN_QUEUE_STATUSES):
             queue_data.append(current_queue[entry])
     queue_data.sort(key=lambda i: i["timestamp"])
     for record in queue_data:
@@ -99,7 +122,7 @@ def leaveQueue():
         found_entry = None
         for entry in current_queue:
             if current_queue[entry]["id"] == id and current_queue[entry]["status"] == "Waiting":
-              found_entry = entry
+                found_entry = entry
         if found_entry is not None:
             firebase.delete("/queue", found_entry)
             return "successfully left queue"
@@ -107,6 +130,7 @@ def leaveQueue():
             return "user does not have an active request in queue", 400
     else:
         return "queue is empty", 400
+
 
 @app.route('/join-queue', methods=['POST'])
 def joinQueue():
@@ -123,9 +147,9 @@ def joinQueue():
     timestamp = datetime.now(pytz.timezone("America/Los_Angeles"))
     current_queue = firebase.get("/queue", None)
     if current_queue:
-      for entry in current_queue:
-        if current_queue[entry]["id"] == id and current_queue[entry]["status"] == "Waiting":
-          return "Username already in queue", 400
+        for entry in current_queue:
+            if current_queue[entry]["id"] == id and current_queue[entry]["status"] == "Waiting":
+                return "Username already in queue", 400
     new_entry = {"inPersonOnline": inPersonOnline, "id": id, "name": name, "openToCollaboration": openToCollaboration,
                  "question": question, "questionType": questionType, "status": status, "timestamp": timestamp}
     firebase.post("/queue", new_entry)
@@ -142,7 +166,15 @@ def logout():
         return "User does not exist for given token", 400
     current_time = datetime.now(pytz.timezone("America/Los_Angeles"))
     chat_client.revoke_user_token(TOKEN_USER_ID_MAP[token], current_time.isoformat())
-     # TODO: Also add that the user leaves queue if they are in the queue and they log out
+    # check that the user leaves queue if they are in the queue when they log out
+    current_queue = firebase.get("/queue", None)
+    if current_queue:
+        found_entry = None
+        for entry in current_queue:
+            if current_queue[entry]["id"] == id and current_queue[entry]["status"] == "Waiting":
+                found_entry = entry
+        if found_entry:
+            firebase.delete("/queue", found_entry)
     TOKEN_USER_ID_MAP.pop(token)
     return "User has been logged out"
 
