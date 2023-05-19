@@ -76,9 +76,7 @@ def getQueueData():
     for entry in current_queue:
         parsed_datetime = datetime.strptime(current_queue[entry]["timestamp"].split(".")[0], "%Y-%m-%dT%H:%M:%S")
         current_queue[entry]["timestamp"] = parsed_datetime
-        if request.args.get("type", "") == "":
-            queue_data.append(current_queue[entry])
-        elif request.args.get("type", "") == "" or \
+        if request.args.get("type", "") == "" or \
                 (request.args.get("type", "") == "queue" and current_queue[entry]["status"] in IN_QUEUE_STATUSES):
             queue_data.append(current_queue[entry])
     queue_data.sort(key=lambda i: i["timestamp"])
@@ -176,7 +174,7 @@ def logout():
     if found_entry:
         firebase.delete("/queue", found_entry)
     TOKEN_USER_ID_MAP.pop(token)
-    return "User has been logged out"ß
+    return "User has been logged out"
 
 
 @app.route('/login', methods=['POST'])

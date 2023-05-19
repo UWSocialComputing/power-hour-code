@@ -125,7 +125,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   });
 
-   const getQueueData = useQuery({
+  const getQueueData = useQuery({
     queryKey: ['getQueueData'],
     queryFn: () =>
       axios.get(`${import.meta.env.VITE_SERVER_URL}/get-queue-data`)
