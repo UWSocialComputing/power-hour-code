@@ -209,15 +209,16 @@ def endHelp():
 def getQueueData():
     current_queue = firebase.get("/queue", None)
     queue_data = []
-    for entry in current_queue:
-        parsed_datetime = datetime.strptime(current_queue[entry]["timestamp"].split(".")[0], "%Y-%m-%dT%H:%M:%S")
-        current_queue[entry]["timestamp"] = parsed_datetime
-        if request.args.get("type", "") == "" or \
-                (request.args.get("type", "") == "queue" and current_queue[entry]["status"] in IN_QUEUE_STATUSES):
-            queue_data.append(current_queue[entry])
-    queue_data.sort(key=lambda i: i["timestamp"])
-    for record in queue_data:
-        record["timestamp"] = record["timestamp"].strftime("%H:%M:%S")
+    if current_queue:
+        for entry in current_queue:
+            parsed_datetime = datetime.strptime(current_queue[entry]["timestamp"].split(".")[0], "%Y-%m-%dT%H:%M:%S")
+            current_queue[entry]["timestamp"] = parsed_datetime
+            if request.args.get("type", "") == "" or \
+                    (request.args.get("type", "") == "queue" and current_queue[entry]["status"] in IN_QUEUE_STATUSES):
+                queue_data.append(current_queue[entry])
+        queue_data.sort(key=lambda i: i["timestamp"])
+        for record in queue_data:
+            record["timestamp"] = record["timestamp"].strftime("%H:%M:%S")
     return queue_data
 
 
