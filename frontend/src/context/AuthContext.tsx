@@ -1,8 +1,6 @@
 import {
   UseMutationResult,
   useMutation,
-  UseQueryResult,
-  useQuery,
   useQueryClient
 } from "@tanstack/react-query";
 import axios, {AxiosResponse} from "axios";
@@ -10,6 +8,7 @@ import { createContext, useContext, ReactNode, useState, useEffect } from "react
 import { useNavigate } from "react-router-dom";
 import { StreamChat } from "stream-chat";
 import { useLocalStorage } from "../hooks/useLocalStorage";
+import { socket } from "../socket";
 
 // Define all info needed for an authed state
 type AuthContext = {
@@ -17,12 +16,9 @@ type AuthContext = {
   user?: User,
   streamChat?: StreamChat,
   loginAfterSignup: boolean,
-  getWaitTime: UseQueryResult<AxiosResponse>,
   signup: UseMutationResult<AxiosResponse, unknown, User>
   login: UseMutationResult<{token: string, user: User}, unknown, LoginInfo>,
   logout: UseMutationResult<AxiosResponse, unknown, void>,
-  sendBotMessage: UseMutationResult<AxiosResponse, unknown, string>,
-  getQueueData: UseQueryResult<AxiosResponse>,
   joinQueue: UseMutationResult<AxiosResponse, unknown, QueueEntryInfo>,
   modifyRequest: UseMutationResult<AxiosResponse, unknown, QueueEntryInfo>,
   leaveQueue: UseMutationResult<AxiosResponse, unknown, string>,
@@ -74,16 +70,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [streamChat, setStreamChat] = useState<StreamChat>();
   const [loginAfterSignup, setLoginAfterSignup] = useState(false);
 
-  const getWaitTime = useQuery({
-    queryKey: ['getWaitTime'],
-    queryFn: () =>
-      axios.get(`${import.meta.env.VITE_SERVER_URL}/get-wait-time`)
-      .then((response) => {
-        return response;
-      }
-   )
-  });
-
   const signup = useMutation({
     mutationFn: (user: User) => {
       return axios.post(`${import.meta.env.VITE_SERVER_URL}/signup`, user);
@@ -105,6 +91,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     onSuccess(data) {
       setUser(data.user);
       setToken(data.token);
+      socket.emit("subscribe-notification", {"id": data.user.id});
     }
   });
 
@@ -113,26 +100,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
       return axios.post(`${import.meta.env.VITE_SERVER_URL}/logout`, {token});
     },
     onSuccess() {
+      socket.emit("unsubscribe-notification", {"id": user?.id})
       setUser(undefined);
       setToken(undefined);
       setStreamChat(undefined);
     }
-  });
-
-  const sendBotMessage = useMutation({
-    mutationFn: (channelId: string) => {
-      return axios.post(`${import.meta.env.VITE_SERVER_URL}/sendBotMessage`, {channelId});
-    }
-  });
-
-  const getQueueData = useQuery({
-    queryKey: ['getQueueData'],
-    queryFn: () =>
-      axios.get(`${import.meta.env.VITE_SERVER_URL}/get-queue-data`)
-      .then((response) => {
-        return response;
-      }
-   )
   });
 
   const joinQueue = useMutation({
@@ -194,7 +166,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       })
     }
   }, [token, user]);
-  return <Context.Provider value={{ user, streamChat, loginAfterSignup, getWaitTime, signup, login, logout, sendBotMessage, getQueueData, joinQueue, modifyRequest, leaveQueue}}>
+  return <Context.Provider value={{ user, streamChat, loginAfterSignup, signup, login, logout, joinQueue, modifyRequest, leaveQueue}}>
     {children}
   </Context.Provider>
 }

@@ -25,18 +25,61 @@ import { CreateChatView } from "./objects/CreateChatView";
 import Button from "@mui/material/Button";
 import QueueForm from './objects/QueueForm';
 import { Card, CardContent } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
+import { socket } from "../socket.js";
+
 
 export function Home() {
 
-  const {user, streamChat, getQueueData, getWaitTime } = useLoggedInAuth();
-  const rowData = getQueueData?.data?.data;
+  const { user, streamChat } = useLoggedInAuth();
+
+  const getQueueData = useQuery({
+    queryKey: ['getQueueData'],
+    queryFn: () =>
+      axios.get(`${import.meta.env.VITE_SERVER_URL}/get-queue-data`)
+      .then((response) => {
+        return response;
+      }
+   )
+  });
+
+  const getWaitTime = useQuery({
+    queryKey: ['getWaitTime'],
+    queryFn: () =>
+      axios.get(`${import.meta.env.VITE_SERVER_URL}/get-wait-time`)
+      .then((response) => {
+        return response;
+      }
+   )
+  });
 
   // channels: channel list, chat: chat view, new: create chat view
   const [showChat, setShowChat] = useState("channels");
   const [showForm, setShowForm] = useState(false);
-  const [isJoined, setIsJoined] = useState(rowData?.filter((row: any) => row.id == user.id).length > 0);
+  const [rowData, setRowData] = useState([]);
+  const [isJoined, setIsJoined] = useState(false);
   const [members, setMembers] = useState<string[]>([]);
   const [numSessions, setNumSessions] = useState(0);
+
+  useEffect(() => {
+    setRowData(getQueueData.data?.data);
+  }, [getQueueData.data]);
+
+  useEffect(() => {
+    setIsJoined(rowData?.filter((row: any) => row.id == user.id).length > 0);
+  }, [rowData, user.id]);
+
+  useEffect(() => {
+    function onUpdateQueue(value: any) {
+      setRowData(value)
+    }
+    socket.on('update-queue', onUpdateQueue);
+
+    return () => {
+      socket.off('update-queue', onUpdateQueue);
+    };
+  }, []);
 
   if (streamChat == null) return <LoadingIndicator />;
   return (
@@ -46,7 +89,7 @@ export function Home() {
       <div className="w-2/3 mt-3 ml-5 mr-3">
         <StatisticCards
           waitTime={getWaitTime?.data?.data}
-          studentsAhead={rowData.findIndex((row: any) => row.id == user.id)}
+          studentsAhead={rowData ? rowData.findIndex((row: any) => row.id == user.id) : 0}
           activeSessions={numSessions}
         />
         <Button

@@ -1,5 +1,5 @@
-import * as React from "react";
-import { 
+import {useState, useEffect} from "react";
+import {
   Button,
   IconButton,
   Typography,
@@ -15,33 +15,64 @@ import {
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import ClearIcon from '@mui/icons-material/Clear';
 import { useLoggedInAuth } from "../../context/AuthContext";
+import { useMutation } from "@tanstack/react-query";
+import axios from "axios";
+import { socket } from "../../socket.js";
+
 
 export default function PowerHourAppBar() {
-  const { logout } = useLoggedInAuth();
-  const [anchorElNotifications, setAnchorElNotifications] = React.useState(null);
+  const { user, logout } = useLoggedInAuth();
+  const [anchorElNotifications, setAnchorElNotifications] = useState(null);
   const openNotifications = Boolean(anchorElNotifications);
-  let notificationData = [
-      {newSession: {
-          senderName: "Andrea Ha"
-        }
-      },
-      {newSession: {
-          senderName: "luckyqxw"
-        },
-      },
-      {newSession: {
-          senderName: "Kevin Feng"
-        },
-      },
-      {newSession: {
-          senderName: "Wen Qiu"
-        },
-      }
-  ]
+  const [notificationData, setNotificationData] = useState([]);
 
-  const handleDeleteNotif = () => {
-    console.log("delete")
+  const getNotificationData = useMutation({
+    mutationFn: () => {
+      return axios.post(`${import.meta.env.VITE_SERVER_URL}/get-notifications`, {"id": user.id})
+        .then(res => {
+          // token for validation, user object for info display
+          return res.data;
+        });
+    },
+    onSuccess(data) {
+      setNotificationData(data);
+    }
+  });
+
+  useEffect(() => {
+    getNotificationData.mutate();
+  }, []);
+
+  useEffect(() => {
+    function onNotification(value: any) {
+      console.log(value);
+      setNotificationData(value)
+    }
+    socket.on('notification', onNotification);
+
+    return () => {
+      socket.off('notification', onNotification);
+    };
+  }, []);
+
+
+  const deleteNotification = useMutation({
+    mutationFn: (id: string) => {
+      return axios.post(`${import.meta.env.VITE_SERVER_URL}/delete-notification`, {"user-id": user.id, "notif-id": id})
+        .then(res => {
+          // token for validation, user object for info display
+          return res.data;
+        });
+    },
+    onSuccess(data) {
+      setNotificationData(data);
+    }
+  });
+
+  const handleDeleteNotif = (notifId: string) => {
+    deleteNotification.mutate(notifId);
   }
+
   return (
     <Box sx={{ flexGrow: 1 }}>
       <AppBar elevation={0} position="static">
@@ -54,7 +85,7 @@ export default function PowerHourAppBar() {
               <NotificationsIcon className="text-white"/>
             </Badge>
           </IconButton>
-          <Button 
+          <Button
             className="logout-btn"
             variant="text"
             onClick={() => logout.mutate()}
@@ -76,7 +107,7 @@ export default function PowerHourAppBar() {
 
        {notificationData === null ? // data from fetch has not loaded
         <></> :
-        Array.isArray(notificationData) && notificationData.length === 0 ? 
+        Array.isArray(notificationData) && notificationData.length === 0 ?
         <Typography m={1} ml={2} variant="body2">
           No notifications
         </Typography> :
@@ -89,10 +120,10 @@ export default function PowerHourAppBar() {
               >
                 <ListItemText>
                   <Stack sx={{display: 'flex', alignItems: 'center'}} direction="row" justifyContent="space-between" m={0.5}>
-                    <Typography noWrap>
-                      <b>{notif.newSession.senderName}</b> added you to collaboration session
+                    <Typography>
+                      <b>{notif.initiator}</b> added you to new collaboration session <em>{notif.channelName}</em>
                     </Typography>
-                    <IconButton onClick={handleDeleteNotif}>
+                    <IconButton onClick={() => handleDeleteNotif(notif.id)}>
                       <ClearIcon fontSize="small"/>
                     </IconButton>
                   </Stack>

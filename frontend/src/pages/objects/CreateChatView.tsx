@@ -4,13 +4,20 @@ import { useLoggedInAuth } from "../../context/AuthContext";
 import { CustomChatContext } from "../../context/CustomChatContext";
 import { ArrowBack } from "@mui/icons-material";
 import { FormControl, TextField, Button, InputLabel, Select, SelectChangeEvent, MenuItem, Stack, FormHelperText } from "@mui/material";
+import axios from "axios";
 
 export function CreateChatView(props: any) {
-  const { streamChat, user, sendBotMessage} = useLoggedInAuth();
+  const { streamChat, user} = useLoggedInAuth();
   const [sessionName, setSessionName] = useState<string>("");
   const toggleChatHandler = useContext(CustomChatContext)["toggleChatHandler"];
   const [isMissingFields, setIsMissingFields] = useState(true);
   const [newChannelId, setNewChannelId] = useState<string>("");
+
+  const sendBotMessage = useMutation({
+    mutationFn: (channelId: string) => {
+      return axios.post(`${import.meta.env.VITE_SERVER_URL}/sendBotMessage`, {channelId});
+    }
+  });
 
   useEffect(() => {
     setIsMissingFields(sessionName === "" || props.members.length === 0);

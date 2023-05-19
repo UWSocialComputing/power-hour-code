@@ -19,7 +19,7 @@ export default function QueueTable(props:any) {
   const { user, leaveQueue } = useLoggedInAuth();
 
   const [showLeaveModal, setShowLeaveModal] = React.useState(false);
-  
+
   const handleLeaveQueue = () => {
     leaveQueue.mutate(user.id);
     setShowLeaveModal(false);
@@ -50,7 +50,7 @@ export default function QueueTable(props:any) {
           </TableRow>
         </TableHead>
         <TableBody>
-          {props.rows.map((row: any) => (
+          {props.rows && props.rows.map((row: any) => (
             <TableRow
               className={row.id == user.id ? "bg-[#eff8ff]": ""}
               key={row.id}

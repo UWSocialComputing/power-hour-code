@@ -1,5 +1,6 @@
 from firebase import firebase
 from flask import Flask, request, jsonify
+from flask_socketio import SocketIO, emit
 from stream_chat import StreamChat
 from flask_cors import CORS
 from datetime import datetime
@@ -9,14 +10,147 @@ from dotenv import load_dotenv
 
 load_dotenv()
 app = Flask(__name__)
+app.config["SECRET_KEY"] = "secret"
+socketio = SocketIO(app, cors_allowed_origins="*")
 firebase = firebase.FirebaseApplication('https://power-hour-3d428-default-rtdb.firebaseio.com/', None)
 chat_client = StreamChat(api_key=os.environ.get("STREAM_API_KEY"), api_secret=os.environ.get("STREAM_PRIVATE_API_KEY"))
 # map stream chat access tokens to user id
 TOKEN_USER_ID_MAP = {}
+# map user id to web socket connection
+CONNECTED_USERS = {}
+
 CORS(app, resources={r"/*": {"origins": "*"}})
 app.config['CORS_HEADERS'] = 'Content-Type'
 IN_QUEUE_STATUSES = ["Waiting", "In Progress"]
 
+@socketio.on('subscribe-notification')
+def notificationHandler(json):
+    """Adds the incoming connection and its user id to the map
+
+    Args:
+        json: in the format of {"id": userId}
+    """
+    print(f'{request.sid} connected')
+    CONNECTED_USERS[json["id"]] = request.sid
+    print(CONNECTED_USERS)
+
+@socketio.on('unsubscribe-notification')
+def notificationHandler(json):
+    """Removes the incoming connection and its user id from the map
+
+    Args:
+        json: in the format of {"id": userId}
+    """
+    print(f'{request.sid} disconnected')
+    CONNECTED_USERS.pop(json["id"])
+    print(CONNECTED_USERS)
+
+@app.route('/webhook', methods=['POST'])
+def webhookHandler():
+    """Handles webhook push from the stream chat API
+    request: one of the webhook objects sent via stream chat API upon triggering some event
+    for now it only handles new channel created notification message. It will take the webhook
+    object and insert a new entry into the notification table, then notify all affected members
+    about the new channel (excluding the user who created the channel)
+    Returns:
+        string: success message
+    """
+    body = request.json
+    # handle create channel notifications
+    if body["type"] == "channel.created":
+        # extract all relevant members other than the one who initiates room creation
+        affected_members = get_affected_users(body)
+        initiator = body["user"]["id"]
+        for member in affected_members:
+             # add entry to notification database
+            new_notif = {}
+            new_notif["initiator"] = initiator
+            new_notif["notifier"] = member
+            new_notif["type"] = "channel.created"
+            new_notif["channelId"] = body["channel_id"]
+            new_notif["channelName"] = body["channel"]["name"]
+            firebase.post("/notification", new_notif)
+            # ping those users about the new channel
+            socketio.emit('notification', get_notif_for_id(member), room=CONNECTED_USERS[member])
+    return "success"
+
+
+@app.route('/get-notifications', methods=['POST'])
+def getNotifications():
+    """request: {"id": userId}
+    Returns:
+        array of notifications relevant to given user.
+        Each notification has the following structure:
+        see get_notif_for_id for structure
+    """
+    body = request.json
+    if missing_fields(body, ["id"]):
+        return "Missing required parameters", 400
+    id = body["id"]
+    return get_notif_for_id(id)
+
+@app.route('/delete-notification', methods=['POST'])
+def deleteNotification():
+    """request: {"user-id": userId, "notif-id": id of notif to be deleted}
+    Removes the given notification for the given user, then sends back updated
+    notification info
+    Returns:
+        updated array of notifications relevant to given user.
+        see get_notif_for_id for structure
+    """
+    body = request.json
+    if missing_fields(body, ["notif-id", "user-id"]):
+        return "Missing required parameters", 400
+    notif_id = body["notif-id"]
+    user_id = body["user-id"]
+    firebase.delete("/notification", notif_id)
+    return get_notif_for_id(user_id)
+
+def get_notif_for_id(id):
+    """takes in user id and retrieves notifications relevant to given user
+    Relevant notification means the given user id is the notifier for the
+    notification
+
+    Args:
+        id: user id string
+
+    Returns:
+        updated array of notifications relevant to given user.
+        Each notification has the following structure:
+        {
+            "id": the notification entry hash in firebase
+            "initiator": initiator id
+            "notifier": notifier id
+            "type": notification type, channel.created for now
+            "channelName": name of the new channel
+            "channelId": id of the new channel
+        }
+    """
+    all_notifications = firebase.get("/notification", None)
+    if all_notifications:
+        user_notifications = []
+        for entry in all_notifications:
+            if all_notifications[entry]["notifier"] == id:
+                all_notifications[entry]["id"] = entry
+                user_notifications.append(all_notifications[entry])
+        return user_notifications
+    else:
+        return []
+
+def get_affected_users(channel_created_obj):
+    """helper function that takes the channel created webhook object and
+    extracts all affected users (excluding the one who created the channel)
+
+    Args:
+        channel_created_obj: channel created webhook object
+
+    Returns:
+        a list of affected users (excluding the channel creator and bot account)
+    """
+    members = [member["user_id"] for member in channel_created_obj["channel"]["members"]]
+    members.remove(channel_created_obj["user"]["id"])
+    members.remove("bot")
+    return members
 
 @app.route('/get-wait-time', methods=['GET'])
 def getWaitTime():
@@ -39,6 +173,7 @@ def startHelp():
         current_queue[found_entry]["status"] = "In Progress"
         if found_entry is not None:
             firebase.patch(f"/queue", current_queue)
+            socketio.emit("update-queue", getQueueData())
             return f"successfully started helping student {current_queue[found_entry]['name']}"
         else:
             return "user is not waiting in queue", 400
@@ -60,6 +195,7 @@ def endHelp():
         current_queue[found_entry]["status"] = "Helped"
         if found_entry is not None:
             firebase.patch(f"/queue", current_queue)
+            socketio.emit("update-queue", getQueueData())
             return f"successfully finish helping student {current_queue[found_entry]['name']}"
         else:
             return "user is being helped in queue", 400
@@ -99,6 +235,7 @@ def leaveQueue():
                 found_entry = entry
         if found_entry is not None:
             firebase.delete("/queue", found_entry)
+            socketio.emit("update-queue", getQueueData())
             return "successfully left queue"
         else:
             return "user does not have an active request in queue", 400
@@ -127,6 +264,7 @@ def joinQueue():
     new_entry = {"inPersonOnline": inPersonOnline, "id": id, "name": name, "openToCollaboration": openToCollaboration,
                  "question": question, "questionType": questionType, "status": status, "timestamp": timestamp}
     firebase.post("/queue", new_entry)
+    socketio.emit("update-queue", getQueueData())
     return "Successfully joined queue"
 
 @app.route('/modify-request', methods=['POST'])
@@ -141,14 +279,20 @@ def modifyRequest():
     questionType = body["questionType"]
     current_queue = firebase.get("/queue", None)
     if current_queue:
+        found_entry = None
         for entry in current_queue:
-            if current_queue[entry]["id"] == id:
-                current_queue[entry]["inPersonOnline"] = inPersonOnline
-                current_queue[entry]["openToCollaboration"] = openToCollaboration
-                current_queue[entry]["question"] = question
-                current_queue[entry]["questionType"] = questionType
-                firebase.patch(f"/queue", current_queue)
-        return "Successfully edited queue entry"
+            if current_queue[entry]["id"] == id and current_queue[entry]["status"] == "Waiting":
+                found_entry = entry
+        if found_entry:
+            current_queue[found_entry]["inPersonOnline"] = inPersonOnline
+            current_queue[found_entry]["openToCollaboration"] = openToCollaboration
+            current_queue[found_entry]["question"] = question
+            current_queue[found_entry]["questionType"] = questionType
+            firebase.patch(f"/queue", current_queue)
+            socketio.emit("update-queue", getQueueData())
+            return "Successfully edited queue entry"
+        else:
+            return "No active request for given user", 400
     else:
         return "Queue is empty", 400
 
@@ -253,4 +397,4 @@ def missing_fields(d, fields):
 
 
 if __name__ == "__main__":
-    app.run()
+    socketio.run(app, debug=True, port=8001)
