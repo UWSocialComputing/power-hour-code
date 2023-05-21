@@ -398,4 +398,4 @@ def missing_fields(d, fields):
 
 
 if __name__ == "__main__":
-    socketio.run(app, debug=True, port=8001)
+    socketio.run(app)

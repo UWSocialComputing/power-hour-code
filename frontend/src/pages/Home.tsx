@@ -71,13 +71,22 @@ export function Home() {
   }, [rowData, user.id]);
 
   useEffect(() => {
+    function onConnect() {
+      const transport = socket.io.engine.transport.name; // in most cases, "polling"
+      console.log(transport);
+      socket.io.engine.on("upgrade", () => {
+        const upgradedTransport = socket.io.engine.transport.name; // in most cases, "websocket"
+        console.log(upgradedTransport);
+      });
+    }
     function onUpdateQueue(value: any) {
       setRowData(value)
     }
     socket.on('update-queue', onUpdateQueue);
-
+    socket.on('connect', onConnect);
     return () => {
       socket.off('update-queue', onUpdateQueue);
+      socket.off('connect', onConnect);
     };
   }, []);
 
