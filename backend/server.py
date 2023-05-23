@@ -16,30 +16,43 @@ TOKEN_USER_ID_MAP = {}
 CORS(app, resources={r"/*": {"origins": "*"}})
 app.config['CORS_HEADERS'] = 'Content-Type'
 IN_QUEUE_STATUSES = ["Waiting", "In Progress"]
+DEFAULT_QUESTION_TIME = 10 # estimated in minutes
 
 
 @app.route('/get-wait-time', methods=['GET'])
 def getWaitTime():
     # TODO: complete wait time logic
     current_queue = firebase.get("/queue", None)
-    question_types = {}
+    question_types_total_time = {}
+    question_types_counts = {}
+    # get historic time to answer each different type of question so far
     for entry in current_queue:
-        if current_queue[entry]["questionType"] not in question_types:
-            question_types[current_queue[entry]["questionType"]] =
-        else:
-
-        parsed_datetime = datetime.strptime(current_queue[entry]["timestamp"].split(".")[0], "%Y-%m-%dT%H:%M:%S")
-        current_queue[entry]["timestamp"] = parsed_datetime
-        if request.args.get("type", "") == "":
-            queue_data.append(current_queue[entry])
-        elif request.args.get("type", "") == "" or \
-                (request.args.get("type", "") == "queue" and current_queue[entry]["status"] in IN_QUEUE_STATUSES):
-            queue_data.append(current_queue[entry])
-    queue_data.sort(key=lambda i: i["timestamp"])
-    for record in queue_data:
-        record["timestamp"] = record["timestamp"].strftime("%H:%M:%S")
+        if current_queue[entry]["status"] = "Helped":
+            start_time = current_queue[entry]["timestamp"].total_seconds()
+            end_time = current_queue[entry]["endTime"].total_seconds()
+            difference = (end_time - start_time) // 60
+            if current_queue[entry]["questionType"] not in question_types_total_time:
+                question_types_total_time[current_queue[entry]["questionType"]] = difference
+                question_types_counts[current_queue[entry]["questionType"]] = 1
+            else:
+                question_types_total_time[current_queue[entry]["questionType"]] += difference
+                question_types_counts[current_queue[entry]["questionType"]] += 1
+    question_types_avgs = {}
+    for q_type in question_types_total_time:
+        avg = question_types_total_time[q_type] // question_types_counts[q_type]
+        question_types_avgs[q_type] = avg
+    # get wait times based on historic wait time averages per question type multiplied by that
+    # question type that is waiting in the queue
+    # TODO: maybe change this to make it personalized wait time? i.e. the wait time for your
+    # position in the queue rather than the wait time for the whole queue
     question_avg_sums = 0
-    return queue_data
+    for entry in current_queue:
+        if current_queue[entry]["status"] in IN_QUEUE_STATUSES:
+            if current_queue[entry]["questionType"] in question_types_avgs:
+                question_avg_sums += question_types_avgs[current_queue[entry]["questionType"]]
+            else: 
+                question_avg_sums += DEFAULT_QUESTION_TIME
+    return question_avg_sums
 
 
 @app.route('/start-help', methods=['POST'])
