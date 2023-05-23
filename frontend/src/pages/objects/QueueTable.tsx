@@ -27,8 +27,11 @@ export default function QueueTable(props:any) {
   }
 
   const handleCollaborate = (memberId: any) => {
-    let membersList = [...props.members, memberId];
-    membersList = membersList.filter((value, index, array) => array.indexOf(value) === index);
+
+    let membersList = props.members.indexOf(memberId) > -1 ? 
+      props.members.filter((value: any) => value !== memberId):
+      [...props.members, memberId]
+
     props.setMembers(membersList);
     props.setShowChat("new");
   }
@@ -77,10 +80,9 @@ export default function QueueTable(props:any) {
                 <Button
                   color="success"
                   disabled={row.id == user.id || !row.openToCollaboration}
-                  disableElevation
                   onClick={() => handleCollaborate(row.id)}
                   size="small"
-                  variant={row.id == user.id? "outlined" : "contained" }>
+                  variant={row.id == user.id || props.members.includes(row.id)? "outlined" : "contained" }>
                   {row.openToCollaboration? "Collaborate" : "Independent"}
                 </Button>
               </TableCell>
