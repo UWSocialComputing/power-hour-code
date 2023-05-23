@@ -21,7 +21,25 @@ IN_QUEUE_STATUSES = ["Waiting", "In Progress"]
 @app.route('/get-wait-time', methods=['GET'])
 def getWaitTime():
     # TODO: complete wait time logic
-    return '30'
+    current_queue = firebase.get("/queue", None)
+    question_types = {}
+    for entry in current_queue:
+        if current_queue[entry]["questionType"] not in question_types:
+            question_types[current_queue[entry]["questionType"]] =
+        else:
+
+        parsed_datetime = datetime.strptime(current_queue[entry]["timestamp"].split(".")[0], "%Y-%m-%dT%H:%M:%S")
+        current_queue[entry]["timestamp"] = parsed_datetime
+        if request.args.get("type", "") == "":
+            queue_data.append(current_queue[entry])
+        elif request.args.get("type", "") == "" or \
+                (request.args.get("type", "") == "queue" and current_queue[entry]["status"] in IN_QUEUE_STATUSES):
+            queue_data.append(current_queue[entry])
+    queue_data.sort(key=lambda i: i["timestamp"])
+    for record in queue_data:
+        record["timestamp"] = record["timestamp"].strftime("%H:%M:%S")
+    question_avg_sums = 0
+    return queue_data
 
 
 @app.route('/start-help', methods=['POST'])
@@ -82,6 +100,7 @@ def endHelp():
             if current_queue[entry]["id"] == id and current_queue[entry]["status"] == "In Progress":
                 found_entry = entry
         current_queue[found_entry]["status"] = "Helped"
+        current_queue[found_entry]["endTime"] = datetime.now(pytz.timezone("America/Los_Angeles"))
         if found_entry is not None:
             firebase.patch(f"/queue", current_queue)
             return f"successfully finish helping student {current_queue[found_entry]['name']}"
@@ -145,13 +164,15 @@ def joinQueue():
     questionType = body["questionType"]
     status = "Waiting"
     timestamp = datetime.now(pytz.timezone("America/Los_Angeles"))
+    endTime = "NaN"
     current_queue = firebase.get("/queue", None)
     if current_queue:
         for entry in current_queue:
             if current_queue[entry]["id"] == id and current_queue[entry]["status"] == "Waiting":
                 return "Username already in queue", 400
     new_entry = {"inPersonOnline": inPersonOnline, "id": id, "name": name, "openToCollaboration": openToCollaboration,
-                 "question": question, "questionType": questionType, "status": status, "timestamp": timestamp}
+                 "question": question, "questionType": questionType, "status": status, "timestamp": timestamp,
+                 "endTime": endTime}
     firebase.post("/queue", new_entry)
     return "Successfully joined queue"
 
