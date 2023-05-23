@@ -35,12 +35,6 @@ export function CreateChatView(props: any) {
     setIsMissingFields(sessionName === "" || props.members.length === 0);
   }, [sessionName, props.members]);
 
-  useEffect(() => {
-    // TODO: look up the real names for people in the queue rather than
-    // displaying the username, could be done using contexts
-    setSessionName(props.members.join(","));
-  }, [props.members]);
-
   // useMutation when a call to server will change the state
   const createChannel = useMutation({
     mutationFn: ({name, memberIds}:
@@ -91,7 +85,6 @@ export function CreateChatView(props: any) {
     const {
       target: {value},
     } = event;
-    setSessionName(value);
     props.setMembers(
       typeof value === 'string' ? value.split(',') : value
     );

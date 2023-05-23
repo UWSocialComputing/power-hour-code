@@ -71,9 +71,30 @@ def webhookHandler():
             new_notif["channelName"] = body["channel"]["name"]
             firebase.post("/notification", new_notif)
             # ping those users about the new channel
+            if member in CONNECTED_USERS:
+                socketio.emit('notification', get_notif_for_id(member), room=CONNECTED_USERS[member])
+    elif body["type"] == "member.added":
+        # figure out the channel id
+        channel_id = body["channel_id"]
+        initiator = find_owner(body["members"])
+        member = body["member"]["user_id"]
+        new_notif = {}
+        new_notif["initiator"] = initiator
+        new_notif["notifier"] = member
+        new_notif["type"] = "member.added"
+        new_notif["channelId"] = channel_id
+        new_notif["channelName"] = ""
+        firebase.post("/notification", new_notif)
+        if member in CONNECTED_USERS:
             socketio.emit('notification', get_notif_for_id(member), room=CONNECTED_USERS[member])
     return "success"
 
+
+def find_owner(members):
+    for member in members:
+        if member["role"] == "owner":
+            return member["user_id"]
+    return None
 
 @app.route('/get-notifications', methods=['POST'])
 def getNotifications():

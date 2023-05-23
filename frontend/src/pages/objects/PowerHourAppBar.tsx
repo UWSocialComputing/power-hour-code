@@ -71,7 +71,7 @@ export default function PowerHourAppBar() {
 
   const handleDeleteNotif = (notifId: string) => {
     deleteNotification.mutate(notifId);
-  }
+  };
 
   return (
     <Box sx={{ flexGrow: 1 }}>
@@ -120,9 +120,16 @@ export default function PowerHourAppBar() {
               >
                 <ListItemText>
                   <Stack sx={{display: 'flex', alignItems: 'center'}} direction="row" justifyContent="space-between" m={0.5}>
-                    <Typography>
-                      <b>{notif.initiator}</b> added you to new collaboration session <em>{notif.channelName}</em>
-                    </Typography>
+                    {notif.type === "channel.created" &&
+                      <Typography>
+                        <b>{notif.initiator}</b> added you to a new collaboration session <em>{notif.channelName}</em>
+                      </Typography>
+                    }
+                    {notif.type === "member.added" &&
+                      <Typography>
+                        <b>{notif.initiator}</b> invited you to an existing collaboration session
+                      </Typography>
+                    }
                     <IconButton onClick={() => handleDeleteNotif(notif.id)}>
                       <ClearIcon fontSize="small"/>
                     </IconButton>

@@ -28,6 +28,7 @@ import { Card, CardContent } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { socket } from "../socket.js";
+import { EditChatView } from "./objects/EditChatView.js";
 
 
 export function Home() {
@@ -61,6 +62,7 @@ export function Home() {
   const [isJoined, setIsJoined] = useState(false);
   const [members, setMembers] = useState<string[]>([]);
   const [numSessions, setNumSessions] = useState(0);
+  const [activeChannel, setActiveChannel] = useState(null);
 
   useEffect(() => {
     setRowData(getQueueData.data?.data);
@@ -122,10 +124,16 @@ export function Home() {
         <CustomChatContext.Provider value={
           {
             "toggleChatHandler": (view) => setShowChat(view),
-            "updateSessionHandler": (num) => setNumSessions(num)
+            "updateSessionHandler": (num) => setNumSessions(num),
+            "setActiveChannelHandler": (channel) => setActiveChannel(channel)
           }}>
           <>
             <Chat client={streamChat}>
+              <div className={showChat === "edit" ? "" : "hidden"}>
+                <EditChatView
+                  activeChannel={activeChannel}
+                />
+              </div>
               <div className={showChat === "new" ? "" : "hidden"}>
                 <CreateChatView members={members} setMembers={setMembers} />
               </div>
@@ -156,9 +164,10 @@ export function Home() {
 
 function Channels({ loadedChannels }: ChannelListMessengerProps) {
   // provide info about chat
-  const {setActiveChannel, channel: activeChannel} = useChatContext();
+  const { setActiveChannel, channel: activeChannel } = useChatContext();
   const toggleChatHandler = useContext(CustomChatContext)["toggleChatHandler"];
   const updateSessionHandler = useContext(CustomChatContext)["updateSessionHandler"];
+  const setActiveChannelHandler = useContext(CustomChatContext)["setActiveChannelHandler"];
   const { t, userLanguage } = useTranslationContext('ChannelPreview');
   useEffect(() => {
     if (loadedChannels != null) {
@@ -185,6 +194,7 @@ function Channels({ loadedChannels }: ChannelListMessengerProps) {
           return <button
             onClick={() => {
               setActiveChannel(channel);
+              setActiveChannelHandler(channel);
               toggleChatHandler("chat");
             }}
             className={`p-4 rounded-lg gap-2 mb-3 text-left w-full ${extraClasses}`}
@@ -207,7 +217,7 @@ function Channels({ loadedChannels }: ChannelListMessengerProps) {
 }
 
 function CustomChannelHeader(props: ChannelHeaderProps) {
-  const {image: overrideImage, live, title: overrideTitle} = props;
+  const { image: overrideImage, live, title: overrideTitle } = props;
   const { channel, watcher_count } = useChannelStateContext('ChannelHeader');
   const { t } = useTranslationContext('ChannelHeader');
   const { displayTitle } = useChannelPreviewInfo({
@@ -264,27 +274,32 @@ function CustomChannelHeader(props: ChannelHeaderProps) {
 }
 
 const MemberList = () => {
-  const { channel } = useChannelStateContext();
-  const [channelUsers, setChannelUsers] = useState<Array<{ name: string; online: boolean }>>([]);
+  const { channel } = useChannelStateContext('ChannelHeader');
+  const toggleChatHandler = useContext(CustomChatContext)["toggleChatHandler"];
+  const { user } = useLoggedInAuth();
 
-  useEffect(() => {
-    const updateChannelUsers = () => {
-      setChannelUsers(
-        Object.values(channel.state.members).map((user) => ({
-          name: user.user!.name! ? user.user!.name! : user.user_id!,
-          online: !!user.user!.online,
-        })),
-      );
-    };
-    updateChannelUsers();
-  }, [channel]);
+  const updatedUsers = Object.values(channel.state.members).map((user) => ({
+    name: user.user!.name! ? user.user!.name! : user.user_id!,
+    online: !!user.user!.online,
+  }));
+
   return (
-    <ul className='users-list'>
-      {channelUsers.filter((member) => {return member.name !== "OH Bot"}).map((member) => (
-        <li key={member.name}>
-          {member.name} - {member.online ? 'active' : 'inactive'}
-        </li>
-      ))}
-    </ul>
+    <>
+      <ul className='users-list mb-2'>
+        {updatedUsers.filter((member) => {return member.name !== "OH Bot"}).map((member) => (
+          <li key={member.name}>
+            {member.name} - {member.online ? 'active' : 'inactive'}
+          </li>
+        ))}
+      </ul>
+      {channel.state.members[user.id].role === "owner"
+        && <Button
+        disableElevation
+        size="small"
+        variant="contained"
+        onClick={() => toggleChatHandler("edit")}>
+        Invite Member
+      </Button>}
+    </>
   );
 };
