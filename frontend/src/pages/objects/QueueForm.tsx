@@ -14,11 +14,12 @@ import Button from '@mui/material/Button';
 
 
 export default function QueueForm(props: any) {
-  const { user, joinQueue } = useLoggedInAuth();
+  const { user, joinQueue, modifyRequest } = useLoggedInAuth();
   const questionTypesArr = ["conceptual", "debugging", "question wording"]
+
   const [questionType, setQuestionType] = React.useState("");
   const [question, setQuestion] = React.useState("");
-  const [inPersonOnline, setInPersonOnline] = React.useState("Online");
+  const [inPersonOnline, setInPersonOnline] = React.useState("In Person");
   const [openToCollaboration, setOpenToCollaboration] = React.useState(true);
   const [isMissingFields, setIsMissingFields] = React.useState(true);
 
@@ -29,10 +30,10 @@ export default function QueueForm(props: any) {
   const clearFormValues = () => {
     setQuestionType("");
     setQuestion("");
-    setInPersonOnline("Online");
+    setInPersonOnline("In Person");
     setOpenToCollaboration(true);
     setIsMissingFields(true);
-  }
+  };
 
   const handleCancel = () => {
     props.setShowForm(false);
@@ -41,7 +42,6 @@ export default function QueueForm(props: any) {
 
   const handleJoin = () => {
     if (!isMissingFields) {
-
       joinQueue.mutate({
         inPersonOnline: inPersonOnline,
         id: user.id,
@@ -49,10 +49,23 @@ export default function QueueForm(props: any) {
         openToCollaboration: openToCollaboration,
         question: question,
         questionType: questionType
-      })      
+      });
       props.setShowForm(false);
       props.setIsJoined(true);
-      clearFormValues();
+    }
+  };
+
+  const handleEdit = () => {
+    if (!isMissingFields) {
+      modifyRequest.mutate({
+        inPersonOnline: inPersonOnline,
+        id: user.id,
+        name: user.name,
+        openToCollaboration: openToCollaboration,
+        question: question,
+        questionType: questionType
+      });
+      props.setShowForm(false);
     }
   };
 
@@ -107,16 +120,16 @@ export default function QueueForm(props: any) {
 
             <Stack direction="row" spacing={1}>
               <Chip
-                variant={inPersonOnline === "Online" ? "filled": "outlined"}
-                label="Online"
-                color="primary"
-                onClick={() => setInPersonOnline("Online")}
-              />
-              <Chip
                 variant={inPersonOnline === "In Person" ? "filled": "outlined"}
                 label="In Person"
                 color="primary"
                 onClick={() => setInPersonOnline("In Person")}
+              />
+              <Chip
+                variant={inPersonOnline === "Online" ? "filled": "outlined"}
+                label="Online"
+                color="primary"
+                onClick={() => setInPersonOnline("Online")}
               />
             </Stack>
 
@@ -139,14 +152,25 @@ export default function QueueForm(props: any) {
             </Stack>
 
             <Stack justifyContent="end" direction="row" spacing={1}>
-              <Button
-                disableElevation
-                size="small"
-                variant={isMissingFields? "disabled": "contained"}
-                onClick={handleJoin}
-              >
-                Join
-              </Button>
+             {props.isJoined ?
+                <Button
+                  disableElevation
+                  size="small"
+                  variant={isMissingFields? "disabled": "contained"}
+                  onClick={handleEdit}
+                >
+                  Edit
+                </Button> :
+
+                <Button
+                  disableElevation
+                  size="small"
+                  variant={isMissingFields? "disabled": "contained"}
+                  onClick={handleJoin}
+                >
+                  Join
+                </Button>
+              }
               <Button
                 disableElevation
                 size="small"

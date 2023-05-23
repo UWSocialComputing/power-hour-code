@@ -16,13 +16,15 @@ type AuthContext = {
   // data in response, error, value to passed into actual function
   user?: User,
   streamChat?: StreamChat,
+  loginAfterSignup: boolean,
   getWaitTime: UseQueryResult<AxiosResponse>,
   signup: UseMutationResult<AxiosResponse, unknown, User>
   login: UseMutationResult<{token: string, user: User}, unknown, LoginInfo>,
   logout: UseMutationResult<AxiosResponse, unknown, void>,
   sendBotMessage: UseMutationResult<AxiosResponse, unknown, string>,
   getQueueData: UseQueryResult<AxiosResponse>,
-  joinQueue: UseMutationResult<AxiosResponse, unknown, JoinQueueInfo>,
+  joinQueue: UseMutationResult<AxiosResponse, unknown, QueueEntryInfo>,
+  modifyRequest: UseMutationResult<AxiosResponse, unknown, QueueEntryInfo>,
   leaveQueue: UseMutationResult<AxiosResponse, unknown, string>,
 };
 
@@ -37,7 +39,7 @@ type LoginInfo = {
   password: string
 }
 
-type JoinQueueInfo = {
+type QueueEntryInfo = {
   inPersonOnline: string,
   id: string,
   name: string,
@@ -70,6 +72,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useLocalStorage<User>("user");
   const [token, setToken] = useLocalStorage<string>("token");
   const [streamChat, setStreamChat] = useState<StreamChat>();
+  const [loginAfterSignup, setLoginAfterSignup] = useState(false);
 
   const getWaitTime = useQuery({
     queryKey: ['getWaitTime'],
@@ -86,6 +89,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       return axios.post(`${import.meta.env.VITE_SERVER_URL}/signup`, user);
     },
     onSuccess() {
+      setLoginAfterSignup(true);
       navigate("/login");
     }
   });
@@ -121,7 +125,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   });
 
-   const getQueueData = useQuery({
+  const getQueueData = useQuery({
     queryKey: ['getQueueData'],
     queryFn: () =>
       axios.get(`${import.meta.env.VITE_SERVER_URL}/get-queue-data`)
@@ -132,8 +136,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
   });
 
   const joinQueue = useMutation({
-    mutationFn: (joinQueueInfo: JoinQueueInfo) => {
+    mutationFn: (joinQueueInfo: QueueEntryInfo) => {
       return axios.post(`${import.meta.env.VITE_SERVER_URL}/join-queue`, joinQueueInfo);
+    },
+    onSuccess: () => {
+      // Invalidate and refetch
+      queryClient.invalidateQueries({ queryKey: ['getQueueData'] })
+    },
+  });
+
+  const modifyRequest = useMutation({
+    mutationFn: (modifyRequestInfo: QueueEntryInfo) => {
+      return axios.post(`${import.meta.env.VITE_SERVER_URL}/modify-request`, modifyRequestInfo);
     },
     onSuccess: () => {
       // Invalidate and refetch
@@ -180,7 +194,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       })
     }
   }, [token, user]);
-  return <Context.Provider value={{ user, streamChat, getWaitTime, signup, login, logout, sendBotMessage, getQueueData, joinQueue, leaveQueue}}>
+  return <Context.Provider value={{ user, streamChat, loginAfterSignup, getWaitTime, signup, login, logout, sendBotMessage, getQueueData, joinQueue, modifyRequest, leaveQueue}}>
     {children}
   </Context.Provider>
 }

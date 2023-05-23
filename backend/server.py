@@ -63,30 +63,6 @@ def startHelp():
     else:
         return "queue is empty", 400
 
-
-@app.route('/modify-request', methods=['POST'])
-def modifyRequest():
-    body = request.json
-    if missing_fields(body, ["InPersonOnline", "id", "openToCollaboration", "question", "questionType"]):
-        return "Missing required parameters", 400
-    inPersonOnline = body["InPersonOnline"]
-    id = body["id"]
-    openToCollaboration = body["openToCollaboration"]
-    question = body["question"]
-    questionType = body["questionType"]
-    current_queue = firebase.get("/queue", None)
-    if current_queue:
-        for entry in current_queue:
-            if current_queue[entry]["id"] == id:
-                current_queue[entry]["inPersonOnline"] = inPersonOnline
-                current_queue[entry]["openToCollaboration"] = openToCollaboration
-                current_queue[entry]["question"] = question
-                current_queue[entry]["questionType"] = questionType
-                firebase.patch(f"/queue", current_queue)
-    else:
-        return "queue is empty", 400
-
-
 @app.route('/end-help', methods=['POST'])
 def endHelp():
     body = request.json
@@ -119,9 +95,7 @@ def getQueueData():
     for entry in current_queue:
         parsed_datetime = datetime.strptime(current_queue[entry]["timestamp"].split(".")[0], "%Y-%m-%dT%H:%M:%S")
         current_queue[entry]["timestamp"] = parsed_datetime
-        if request.args.get("type", "") == "":
-            queue_data.append(current_queue[entry])
-        elif request.args.get("type", "") == "" or \
+        if request.args.get("type", "") == "" or \
                 (request.args.get("type", "") == "queue" and current_queue[entry]["status"] in IN_QUEUE_STATUSES):
             queue_data.append(current_queue[entry])
     queue_data.sort(key=lambda i: i["timestamp"])
@@ -176,6 +150,29 @@ def joinQueue():
     firebase.post("/queue", new_entry)
     return "Successfully joined queue"
 
+@app.route('/modify-request', methods=['POST'])
+def modifyRequest():
+    body = request.json
+    if missing_fields(body, ["inPersonOnline", "id", "openToCollaboration", "question", "questionType"]):
+        return "Missing required parameters", 400
+    inPersonOnline = body["inPersonOnline"]
+    id = body["id"]
+    openToCollaboration = body["openToCollaboration"]
+    question = body["question"]
+    questionType = body["questionType"]
+    current_queue = firebase.get("/queue", None)
+    if current_queue:
+        for entry in current_queue:
+            if current_queue[entry]["id"] == id:
+                current_queue[entry]["inPersonOnline"] = inPersonOnline
+                current_queue[entry]["openToCollaboration"] = openToCollaboration
+                current_queue[entry]["question"] = question
+                current_queue[entry]["questionType"] = questionType
+                firebase.patch(f"/queue", current_queue)
+        return "Successfully edited queue entry"
+    else:
+        return "Queue is empty", 400
+
 
 @app.route('/logout', methods=['POST'])
 def logout():
@@ -183,19 +180,20 @@ def logout():
     if missing_fields(body, ["token"]):
         return "Missing required parameters", 400
     token = body["token"]
+    id = TOKEN_USER_ID_MAP.get(token)
     if token not in TOKEN_USER_ID_MAP:
         return "User does not exist for given token", 400
     current_time = datetime.now(pytz.timezone("America/Los_Angeles"))
     chat_client.revoke_user_token(TOKEN_USER_ID_MAP[token], current_time.isoformat())
     # check that the user leaves queue if they are in the queue when they log out
     current_queue = firebase.get("/queue", None)
+    found_entry = None
     if current_queue:
-        found_entry = None
         for entry in current_queue:
             if current_queue[entry]["id"] == id and current_queue[entry]["status"] == "Waiting":
                 found_entry = entry
-        if found_entry:
-            firebase.delete("/queue", found_entry)
+    if found_entry:
+        firebase.delete("/queue", found_entry)
     TOKEN_USER_ID_MAP.pop(token)
     return "User has been logged out"
 

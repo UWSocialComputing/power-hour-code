@@ -3,7 +3,19 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useLoggedInAuth } from "../../context/AuthContext";
 import { CustomChatContext } from "../../context/CustomChatContext";
 import { ArrowBack } from "@mui/icons-material";
-import { FormControl, TextField, Button, InputLabel, Select, SelectChangeEvent, MenuItem, Stack, FormHelperText } from "@mui/material";
+import { 
+  Checkbox,
+  FormControl,
+  TextField,
+  Button,
+  InputLabel,
+  Select,
+  SelectChangeEvent,
+  MenuItem,
+  Stack,
+  FormHelperText 
+} from "@mui/material";
+
 
 export function CreateChatView(props: any) {
   const { streamChat, user, sendBotMessage} = useLoggedInAuth();
@@ -98,8 +110,12 @@ export function CreateChatView(props: any) {
           <FormControl size="small" variant="filled">
             <InputLabel id="members">Members</InputLabel>
             <Select
-              value={props.members} labelId="members" required multiple
+              value={props.members}
+              labelId="members"
+              required
+              multiple
               onChange={handleSelectChange}
+              renderValue={(selected) => selected.join(', ')}
             >
               {
                 users.data?.users
@@ -109,6 +125,7 @@ export function CreateChatView(props: any) {
                     key={user.id}
                     value={user.id}
                     >
+                      <Checkbox checked={props.members.indexOf(user.id) > -1} />
                       {user.name ? user.name : user.id}
                     </MenuItem>
                 })
