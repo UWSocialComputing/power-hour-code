@@ -22,6 +22,10 @@ NUM_OF_TAs = 1 # number of TAs in the current Office Hours session
 
 @app.route('/get-wait-time', methods=['GET'])
 def getWaitTime():
+    body = request.json
+    if missing_fields(body, ["id"]):
+        return "Missing required parameters", 400
+    id = body["id"]
     current_queue = firebase.get("/queue", None)
     question_types_total_time = {}
     question_types_counts = {}
@@ -30,7 +34,7 @@ def getWaitTime():
         if current_queue[entry]["status"] = "Helped":
             start_time = current_queue[entry]["startTime"].total_seconds()
             end_time = current_queue[entry]["endTime"].total_seconds()
-            difference = (end_time - start_time) // 60
+            difference = round((end_time - start_time) / 60)
             if current_queue[entry]["questionType"] not in question_types_total_time:
                 question_types_total_time[current_queue[entry]["questionType"]] = difference
                 question_types_counts[current_queue[entry]["questionType"]] = 1
@@ -39,12 +43,14 @@ def getWaitTime():
                 question_types_counts[current_queue[entry]["questionType"]] += 1
     question_types_avgs = {}
     for q_type in question_types_total_time:
-        avg = question_types_total_time[q_type] // question_types_counts[q_type]
+        avg = round(question_types_total_time[q_type] / question_types_counts[q_type])
         question_types_avgs[q_type] = avg
     # get wait times based on historic wait time averages per question type multiplied by that
     # question type that is waiting in the queue
     # TODO: maybe change this to make it personalized wait time? i.e. the wait time for your
     # position in the queue rather than the wait time for the whole queue
+    # TODO: add another layer of specifity by having the average of all wait times so far be returned
+    # if there aren't any relevant question type averages yet
     question_avg_sums = 0
     for entry in current_queue:
         if current_queue[entry]["status"] in IN_QUEUE_STATUSES:
@@ -52,7 +58,7 @@ def getWaitTime():
                 question_avg_sums += question_types_avgs[current_queue[entry]["questionType"]]
             else: 
                 question_avg_sums += DEFAULT_QUESTION_TIME
-    return question_avg_sums
+    return round(question_avg_sums / NUM_OF_TAs)
 
 
 @app.route('/start-help', methods=['POST'])
@@ -105,7 +111,13 @@ def endHelp():
 @app.route('/get-queue-data', methods=['GET'])
 def getQueueData():
     current_queue = firebase.get("/queue", None)
-    queue_data = []
+    queue_data = sortQueueByTime(current_queue)
+    for record in queue_data:
+        record["timestamp"] = record["timestamp"].strftime("%H:%M:%S")
+    return queue_data
+
+
+def sortQueueByTime(current_queue):
     for entry in current_queue:
         parsed_datetime = datetime.strptime(current_queue[entry]["timestamp"].split(".")[0], "%Y-%m-%dT%H:%M:%S")
         current_queue[entry]["timestamp"] = parsed_datetime
@@ -113,8 +125,6 @@ def getQueueData():
                 (request.args.get("type", "") == "queue" and current_queue[entry]["status"] in IN_QUEUE_STATUSES):
             queue_data.append(current_queue[entry])
     queue_data.sort(key=lambda i: i["timestamp"])
-    for record in queue_data:
-        record["timestamp"] = record["timestamp"].strftime("%H:%M:%S")
     return queue_data
 
 
@@ -153,6 +163,7 @@ def joinQueue():
     status = "Waiting"
     timestamp = datetime.now(pytz.timezone("America/Los_Angeles"))
     endTime = "NaN"
+    startTime = "NaN"
     current_queue = firebase.get("/queue", None)
     if current_queue:
         for entry in current_queue:
@@ -160,7 +171,7 @@ def joinQueue():
                 return "Username already in queue", 400
     new_entry = {"inPersonOnline": inPersonOnline, "id": id, "name": name, "openToCollaboration": openToCollaboration,
                  "question": question, "questionType": questionType, "status": status, "timestamp": timestamp,
-                 "endTime": endTime}
+                 "endTime": endTime, "startTime": startTime}
     firebase.post("/queue", new_entry)
     return "Successfully joined queue"
 
