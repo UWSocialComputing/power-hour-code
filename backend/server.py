@@ -17,18 +17,18 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 app.config['CORS_HEADERS'] = 'Content-Type'
 IN_QUEUE_STATUSES = ["Waiting", "In Progress"]
 DEFAULT_QUESTION_TIME = 10 # estimated in minutes
+NUM_OF_TAs = 1 # number of TAs in the current Office Hours session
 
 
 @app.route('/get-wait-time', methods=['GET'])
 def getWaitTime():
-    # TODO: complete wait time logic
     current_queue = firebase.get("/queue", None)
     question_types_total_time = {}
     question_types_counts = {}
     # get historic time to answer each different type of question so far
     for entry in current_queue:
         if current_queue[entry]["status"] = "Helped":
-            start_time = current_queue[entry]["timestamp"].total_seconds()
+            start_time = current_queue[entry]["startTime"].total_seconds()
             end_time = current_queue[entry]["endTime"].total_seconds()
             difference = (end_time - start_time) // 60
             if current_queue[entry]["questionType"] not in question_types_total_time:
@@ -67,6 +67,7 @@ def startHelp():
         for entry in current_queue:
             if current_queue[entry]["id"] == id and current_queue[entry]["status"] == "Waiting":
                 found_entry = entry
+        current_queue[found_entry]["startTime"] = datetime.now(pytz.timezone("America/Los_Angeles"))
         current_queue[found_entry]["status"] = "In Progress"
         if found_entry is not None:
             firebase.patch(f"/queue", current_queue)
