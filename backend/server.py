@@ -45,6 +45,22 @@ def notificationHandler(json):
     CONNECTED_USERS.pop(json["id"])
     print(CONNECTED_USERS)
 
+
+@socketio.on('disconnect')
+def disconnect_handler():
+    """Removes the disconnected user from the map. The disconnected id is stored
+    in the request
+    """
+    print(f'{request.sid} disconnected')
+    disconnected_user_id = None
+    for user_id in CONNECTED_USERS:
+        if CONNECTED_USERS[user_id] == request.sid:
+            disconnected_user_id = user_id
+    if disconnected_user_id:
+        CONNECTED_USERS.pop(disconnected_user_id)
+        print(CONNECTED_USERS)
+
+
 @app.route('/webhook', methods=['POST'])
 def webhookHandler():
     """Handles webhook push from the stream chat API
