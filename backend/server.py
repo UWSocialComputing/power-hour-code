@@ -27,37 +27,47 @@ def getWaitTime():
         return "Missing required parameters", 400
     id = body["id"]
     current_queue = firebase.get("/queue", None)
+    sorted_queue_data = sortQueueByTime(current_queue)
     question_types_total_time = {}
     question_types_counts = {}
+    total_time = 0
+    total_counts = 0
     # get historic time to answer each different type of question so far
-    for entry in current_queue:
-        if current_queue[entry]["status"] = "Helped":
-            start_time = current_queue[entry]["startTime"].total_seconds()
-            end_time = current_queue[entry]["endTime"].total_seconds()
-            difference = round((end_time - start_time) / 60)
-            if current_queue[entry]["questionType"] not in question_types_total_time:
-                question_types_total_time[current_queue[entry]["questionType"]] = difference
-                question_types_counts[current_queue[entry]["questionType"]] = 1
+    for entry in sorted_queue_data:
+        if entry["status"] = "Helped":
+            start_time = entry["startTime"].total_seconds()
+            end_time = entry["endTime"].total_seconds()
+            difference = (end_time - start_time) / 60
+            total_counts += 1
+            total_time += difference
+            if entry["questionType"] not in question_types_total_time:
+                question_types_total_time[entry["questionType"]] = difference
+                question_types_counts[entry["questionType"]] = 1
             else:
-                question_types_total_time[current_queue[entry]["questionType"]] += difference
-                question_types_counts[current_queue[entry]["questionType"]] += 1
+                question_types_total_time[entry["questionType"]] += difference
+                question_types_counts[entry["questionType"]] += 1
     question_types_avgs = {}
     for q_type in question_types_total_time:
         avg = round(question_types_total_time[q_type] / question_types_counts[q_type])
         question_types_avgs[q_type] = avg
     # get wait times based on historic wait time averages per question type multiplied by that
     # question type that is waiting in the queue
-    # TODO: maybe change this to make it personalized wait time? i.e. the wait time for your
-    # position in the queue rather than the wait time for the whole queue
-    # TODO: add another layer of specifity by having the average of all wait times so far be returned
-    # if there aren't any relevant question type averages yet
     question_avg_sums = 0
-    for entry in current_queue:
-        if current_queue[entry]["status"] in IN_QUEUE_STATUSES:
-            if current_queue[entry]["questionType"] in question_types_avgs:
-                question_avg_sums += question_types_avgs[current_queue[entry]["questionType"]]
+    if total_counts > 0:
+        total_avg_per_question = round(total_time / total_counts)
+    for entry in sorted_queue_data:
+        if entry["id"] == id and entry["status"] == "In Progress":
+            return 0 # currently being helped, don't need to wait
+        if entry["id"] == id and entry["status"] == "Waiting":
+            if entry["questionType"] in question_types_avgs:
+                question_avg_sums = question_types_avgs[entry["questionType"]]
+            elif total_counts > 0:
+                # add another layer of specifity by having the average of all wait 
+                # times so far be returned if there aren't any relevant question 
+                # type averages yet
+                question_avg_sums = total_avg_per_question
             else: 
-                question_avg_sums += DEFAULT_QUESTION_TIME
+                question_avg_sums = DEFAULT_QUESTION_TIME
     return round(question_avg_sums / NUM_OF_TAs)
 
 
