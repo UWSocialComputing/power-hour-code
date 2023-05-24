@@ -38,7 +38,7 @@ export function Home() {
   const getQueueData = useQuery({
     queryKey: ['getQueueData'],
     queryFn: () =>
-      axios.get(`${import.meta.env.VITE_SERVER_URL}/get-queue-data`)
+      axios.get(`${import.meta.env.VITE_SERVER_URL}/get-queue-data?type=queue`)
       .then((response) => {
         return response;
       }
@@ -48,7 +48,7 @@ export function Home() {
   const getWaitTime = useQuery({
     queryKey: ['getWaitTime'],
     queryFn: () =>
-      axios.get(`${import.meta.env.VITE_SERVER_URL}/get-wait-time`)
+      axios.get(`${import.meta.env.VITE_SERVER_URL}/get-wait-time?id=${user.id}`)
       .then((response) => {
         return response;
       }

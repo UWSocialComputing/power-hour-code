@@ -22,6 +22,8 @@ CONNECTED_USERS = {}
 CORS(app, resources={r"/*": {"origins": "*"}})
 app.config['CORS_HEADERS'] = 'Content-Type'
 IN_QUEUE_STATUSES = ["Waiting", "In Progress"]
+DEFAULT_QUESTION_TIME = 10 # estimated in minutes
+NUM_OF_TAs = 1 # number of TAs in the current Office Hours session
 
 @socketio.on('subscribe-notification')
 def notificationHandler(json):
@@ -191,8 +193,52 @@ def get_affected_users(channel_created_obj):
 
 @app.route('/get-wait-time', methods=['GET'])
 def getWaitTime():
-    # TODO: complete wait time logic
-    return '30'
+    id = request.args.get("id")
+    if not id:
+        return "Missing required parameters", 400
+    current_queue = firebase.get("/queue", None)
+    sorted_queue_data = sortQueueByTime(current_queue)
+    question_types_total_time = {}
+    question_types_counts = {}
+    total_time = 0
+    total_counts = 0
+    # get historic time to answer each different type of question so far
+    for entry in sorted_queue_data:
+        if entry["status"] == "Helped":
+            start_time = entry["startTime"].total_seconds()
+            end_time = entry["endTime"].total_seconds()
+            difference = (end_time - start_time) / 60
+            total_counts += 1
+            total_time += difference
+            if entry["questionType"] not in question_types_total_time:
+                question_types_total_time[entry["questionType"]] = difference
+                question_types_counts[entry["questionType"]] = 1
+            else:
+                question_types_total_time[entry["questionType"]] += difference
+                question_types_counts[entry["questionType"]] += 1
+    question_types_avgs = {}
+    for q_type in question_types_total_time:
+        avg = round(question_types_total_time[q_type] / question_types_counts[q_type])
+        question_types_avgs[q_type] = avg
+    # get wait times based on historic wait time averages per question type multiplied by that
+    # question type that is waiting in the queue
+    question_avg_sums = 0
+    if total_counts > 0:
+        total_avg_per_question = round(total_time / total_counts)
+    for entry in sorted_queue_data:
+        if entry["id"] == id and entry["status"] == "In Progress":
+            return 0 # currently being helped, don't need to wait
+        if entry["id"] == id and entry["status"] == "Waiting":
+            if entry["questionType"] in question_types_avgs:
+                question_avg_sums = question_types_avgs[entry["questionType"]]
+            elif total_counts > 0:
+                # add another layer of specifity by having the average of all wait
+                # times so far be returned if there aren't any relevant question
+                # type averages yet
+                question_avg_sums = total_avg_per_question
+            else:
+                question_avg_sums = DEFAULT_QUESTION_TIME
+    return str(round(question_avg_sums / NUM_OF_TAs))
 
 
 @app.route('/start-help', methods=['POST'])
@@ -207,6 +253,7 @@ def startHelp():
         for entry in current_queue:
             if current_queue[entry]["id"] == id and current_queue[entry]["status"] == "Waiting":
                 found_entry = entry
+        current_queue[found_entry]["startTime"] = datetime.now(pytz.timezone("America/Los_Angeles"))
         current_queue[found_entry]["status"] = "In Progress"
         if found_entry is not None:
             firebase.patch(f"/queue", current_queue)
@@ -230,6 +277,7 @@ def endHelp():
             if current_queue[entry]["id"] == id and current_queue[entry]["status"] == "In Progress":
                 found_entry = entry
         current_queue[found_entry]["status"] = "Helped"
+        current_queue[found_entry]["endTime"] = datetime.now(pytz.timezone("America/Los_Angeles"))
         if found_entry is not None:
             firebase.patch(f"/queue", current_queue)
             socketio.emit("update-queue", getQueueData())
@@ -245,6 +293,13 @@ def endHelp():
 @app.route('/get-queue-data', methods=['GET'])
 def getQueueData():
     current_queue = firebase.get("/queue", None)
+    queue_data = sortQueueByTime(current_queue)
+    for record in queue_data:
+        record["timestamp"] = record["timestamp"].strftime("%H:%M:%S")
+    return queue_data
+
+
+def sortQueueByTime(current_queue):
     queue_data = []
     if current_queue:
         for entry in current_queue:
@@ -254,8 +309,6 @@ def getQueueData():
                     (request.args.get("type", "") == "queue" and current_queue[entry]["status"] in IN_QUEUE_STATUSES):
                 queue_data.append(current_queue[entry])
         queue_data.sort(key=lambda i: i["timestamp"])
-        for record in queue_data:
-            record["timestamp"] = record["timestamp"].strftime("%H:%M:%S")
     return queue_data
 
 
@@ -294,13 +347,16 @@ def joinQueue():
     questionType = body["questionType"]
     status = "Waiting"
     timestamp = datetime.now(pytz.timezone("America/Los_Angeles"))
+    endTime = "NaN"
+    startTime = "NaN"
     current_queue = firebase.get("/queue", None)
     if current_queue:
         for entry in current_queue:
             if current_queue[entry]["id"] == id and current_queue[entry]["status"] == "Waiting":
                 return "Username already in queue", 400
     new_entry = {"inPersonOnline": inPersonOnline, "id": id, "name": name, "openToCollaboration": openToCollaboration,
-                 "question": question, "questionType": questionType, "status": status, "timestamp": timestamp}
+                 "question": question, "questionType": questionType, "status": status, "timestamp": timestamp,
+                 "endTime": endTime, "startTime": startTime}
     firebase.post("/queue", new_entry)
     socketio.emit("update-queue", getQueueData())
     return "Successfully joined queue"
