@@ -5,7 +5,6 @@ import { Login } from "./pages/Login";
 import { AuthProvider } from "./context/AuthContext";
 import { RootLayout } from "./pages/layouts/RootLayout";
 import { Home } from "./pages/Home";
-import { NewChannel } from "./pages/channel/new";
 
 // Outlet enables rendering different layouts depending on the state of the
 // app (login/signup or in chat)

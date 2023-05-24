@@ -3,7 +3,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useLoggedInAuth } from "../../context/AuthContext";
 import { CustomChatContext } from "../../context/CustomChatContext";
 import { ArrowBack } from "@mui/icons-material";
-import { 
+import {
   Checkbox,
   FormControl,
   TextField,
@@ -13,26 +13,27 @@ import {
   SelectChangeEvent,
   MenuItem,
   Stack,
-  FormHelperText 
+  FormHelperText
 } from "@mui/material";
+import axios from "axios";
 
 
 export function CreateChatView(props: any) {
-  const { streamChat, user, sendBotMessage} = useLoggedInAuth();
+  const { streamChat, user} = useLoggedInAuth();
   const [sessionName, setSessionName] = useState<string>("");
   const toggleChatHandler = useContext(CustomChatContext)["toggleChatHandler"];
   const [isMissingFields, setIsMissingFields] = useState(true);
   const [newChannelId, setNewChannelId] = useState<string>("");
 
+  const sendBotMessage = useMutation({
+    mutationFn: (channelId: string) => {
+      return axios.post(`${import.meta.env.VITE_SERVER_URL}/sendBotMessage`, {channelId});
+    }
+  });
+
   useEffect(() => {
     setIsMissingFields(sessionName === "" || props.members.length === 0);
   }, [sessionName, props.members]);
-
-  useEffect(() => {
-    // TODO: look up the real names for people in the queue rather than
-    // displaying the username, could be done using contexts
-    setSessionName(props.members.join(","));
-  }, [props.members]);
 
   // useMutation when a call to server will change the state
   const createChannel = useMutation({
@@ -84,7 +85,6 @@ export function CreateChatView(props: any) {
     const {
       target: {value},
     } = event;
-    setSessionName(value);
     props.setMembers(
       typeof value === 'string' ? value.split(',') : value
     );
