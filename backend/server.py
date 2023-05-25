@@ -237,6 +237,10 @@ def getWaitTime():
         eta = 0
         if student["questionType"] in question_types_avgs:
             eta = question_types_avgs[student["questionType"]]
+        elif total_counts > 0:
+            eta = total_avg_per_question
+        else:
+            eta = DEFAULT_QUESTION_TIME
         eta -= (datetime.now(pytz.timezone("America/Los_Angeles")).total_seconds() - student["startTime"].total_seconds()) / 60
         if eta < 0:
             eta = 0
