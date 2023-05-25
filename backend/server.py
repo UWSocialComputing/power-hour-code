@@ -234,6 +234,7 @@ def getWaitTime():
             in_progress_students.append(entry)
     min_eta = 9999999
     for student in in_progress_students:
+        eta = 0
         if student["questionType"] in question_types_avgs:
             eta = question_types_avgs[student["questionType"]]
         eta -= (datetime.now(pytz.timezone("America/Los_Angeles")).total_seconds() - student["startTime"].total_seconds()) / 60
