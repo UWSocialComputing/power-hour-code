@@ -29,6 +29,7 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { socket } from "../socket.js";
 import { EditChatView } from "./objects/EditChatView.js";
+import Alert from '@mui/material/Alert';
 
 
 export function Home() {
@@ -61,7 +62,6 @@ export function Home() {
   const [rowData, setRowData] = useState([]);
   const [isJoined, setIsJoined] = useState(false);
   const [members, setMembers] = useState<string[]>([]);
-  const [numSessions, setNumSessions] = useState(0);
   const [activeChannel, setActiveChannel] = useState(null);
 
   useEffect(() => {
@@ -96,12 +96,16 @@ export function Home() {
   return (
   <div className="h-screen">
     <PowerHourAppBar/>
+    {getWaitTime?.data?.data <= 10 && 
+      <Alert className="mt-3 ml-5 mr-5" severity="warning">
+        Have your questions ready! The estimated wait time is now <strong>{getWaitTime?.data?.data} mins</strong>
+      </Alert>
+    }
     <div className="flex h-full">
       <div className="w-2/3 mt-3 ml-5 mr-3">
         <StatisticCards
           waitTime={getWaitTime?.data?.data}
           studentsAhead={rowData ? rowData.findIndex((row: any) => row.id == user.id) : 0}
-          activeSessions={numSessions}
         />
         <Button
           disableElevation
@@ -124,7 +128,6 @@ export function Home() {
         <CustomChatContext.Provider value={
           {
             "toggleChatHandler": (view) => setShowChat(view),
-            "updateSessionHandler": (num) => setNumSessions(num),
             "setActiveChannelHandler": (channel) => setActiveChannel(channel)
           }}>
           <>
@@ -166,14 +169,9 @@ function Channels({ loadedChannels }: ChannelListMessengerProps) {
   // provide info about chat
   const { setActiveChannel, channel: activeChannel } = useChatContext();
   const toggleChatHandler = useContext(CustomChatContext)["toggleChatHandler"];
-  const updateSessionHandler = useContext(CustomChatContext)["updateSessionHandler"];
   const setActiveChannelHandler = useContext(CustomChatContext)["setActiveChannelHandler"];
   const { t, userLanguage } = useTranslationContext('ChannelPreview');
-  useEffect(() => {
-    if (loadedChannels != null) {
-      updateSessionHandler(loadedChannels.length);
-    }
-  }, [loadedChannels, updateSessionHandler]);
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex justify-between str-chat__header-livestream str-chat__channel-header">

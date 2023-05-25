@@ -31,10 +31,10 @@ export default function StatisticCards(props:any) {
       <Card variant="outlined">
         <CardContent>
           <Typography component="div" variant="h5">
-            Your Sessions
+            Teaching Assistants
           </Typography>
           <Typography component="div" variant="h3">
-            {props.activeSessions}
+            1
           </Typography>
         </CardContent>
       </Card>

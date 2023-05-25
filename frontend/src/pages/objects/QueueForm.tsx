@@ -75,7 +75,7 @@ export default function QueueForm(props: any) {
         open={props.showForm}
         onClose={() => props.setShowForm(false)}
       >
-        <Box className="bg-white w-1/3 p-7 rounded-md translate-y-1/3 = translate-x-1/2 " >
+        <Box className="bg-white w-1/3 p-7 rounded-md translate-y-1/3 translate-x-1/2">
            <Stack spacing={2}>
             <Typography id="modal-modal-title" variant="h6" component="h2">
               Your Information
@@ -150,6 +150,9 @@ export default function QueueForm(props: any) {
                 onClick={() => setOpenToCollaboration(false)}
               />
             </Stack>
+            <Typography variant="caption">
+              As a reminder, check the collaboration policy for your class
+            </Typography>
 
             <Stack justifyContent="end" direction="row" spacing={1}>
              {props.isJoined ?

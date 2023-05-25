@@ -10,7 +10,8 @@ import {
   MenuItem,
   ListItemText,
   Stack,
-  Badge
+  Badge,
+  Modal
 } from '@mui/material';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import ClearIcon from '@mui/icons-material/Clear';
@@ -25,6 +26,7 @@ export default function PowerHourAppBar() {
   const [anchorElNotifications, setAnchorElNotifications] = useState(null);
   const openNotifications = Boolean(anchorElNotifications);
   const [notificationData, setNotificationData] = useState([]);
+  const [showLogoutModal, setShowLogoutModal] = useState(false)
 
   const getNotificationData = useMutation({
     mutationFn: () => {
@@ -73,6 +75,12 @@ export default function PowerHourAppBar() {
     deleteNotification.mutate(notifId);
   };
 
+  const handleLogout = () => {
+    setShowLogoutModal(false);
+    logout.mutate()
+    
+  };
+
   return (
     <Box sx={{ flexGrow: 1 }}>
       <AppBar elevation={0} position="static">
@@ -88,7 +96,7 @@ export default function PowerHourAppBar() {
           <Button
             className="logout-btn"
             variant="text"
-            onClick={() => logout.mutate()}
+            onClick={()=> setShowLogoutModal(true)}
             disabled={logout.isLoading}>
             Logout
           </Button>
@@ -140,6 +148,37 @@ export default function PowerHourAppBar() {
           })
         }
       </Menu>
+      <Modal
+        open={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+      >
+      <Box className="bg-white w-1/3 p-7 rounded-md translate-y-2/3 m-auto">
+        <Stack spacing={2}>
+          <Typography variant="h6" component="h2">
+            Logging out
+          </Typography>
+          <Typography variant="body1" component="h2">
+            Are you sure you want to log out?
+          </Typography>
+          <Stack justifyContent="end" direction="row" spacing={1}>
+            <Button
+              disableElevation
+              size="small"
+              variant="contained"
+              onClick={handleLogout}>
+              Logout
+            </Button>
+            <Button 
+              disableElevation size="small"
+              variant='outlined'
+              onClick={()=> setShowLogoutModal(false)}
+            >
+              Cancel
+            </Button>
+          </Stack>
+        </Stack>
+      </Box>
+    </Modal>
     </Box>
   );
 }
