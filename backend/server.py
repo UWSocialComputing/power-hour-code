@@ -203,42 +203,65 @@ def getWaitTime():
     total_time = 0
     total_counts = 0
     # get historic time to answer each different type of question so far
-    for entry in sorted_queue_data:
-        if entry["status"] == "Helped":
-            start_time = entry["startTime"].total_seconds()
-            end_time = entry["endTime"].total_seconds()
+    for entry in current_queue:
+        if current_queue[entry]["status"] == "Helped":
+            start_time = current_queue[entry]["startTime"].total_seconds()
+            end_time = current_queue[entry]["endTime"].total_seconds()
             difference = (end_time - start_time) / 60
             total_counts += 1
             total_time += difference
-            if entry["questionType"] not in question_types_total_time:
-                question_types_total_time[entry["questionType"]] = difference
-                question_types_counts[entry["questionType"]] = 1
+            if current_queue[entry]["questionType"] not in question_types_total_time:
+                question_types_total_time[current_queue[entry]["questionType"]] = difference
+                question_types_counts[current_queue[entry]["questionType"]] = 1
             else:
-                question_types_total_time[entry["questionType"]] += difference
-                question_types_counts[entry["questionType"]] += 1
+                question_types_total_time[current_queue[entry]["questionType"]] += difference
+                question_types_counts[current_queue[entry]["questionType"]] += 1
     question_types_avgs = {}
     for q_type in question_types_total_time:
         avg = round(question_types_total_time[q_type] / question_types_counts[q_type])
         question_types_avgs[q_type] = avg
     # get wait times based on historic wait time averages per question type multiplied by that
     # question type that is waiting in the queue
-    question_avg_sums = 0
     if total_counts > 0:
         total_avg_per_question = round(total_time / total_counts)
+    # get all the in progress students and find the min time estimate based on
+    # time elapsed that they have been helped to use that for accurate ETA
+    in_progress_students = []
     for entry in sorted_queue_data:
-        if entry["id"] == id and entry["status"] == "In Progress":
-            return 0 # currently being helped, don't need to wait
-        if entry["id"] == id and entry["status"] == "Waiting":
-            if entry["questionType"] in question_types_avgs:
-                question_avg_sums = question_types_avgs[entry["questionType"]]
+        if entry["status"] == "Waiting":
+            break # at this case, we have passed all the In Progress students
+        elif entry["status"] == "In Progress":
+            in_progress_students.append(entry)
+    min_eta = 9999999
+    for student in in_progress_students:
+        if student["questionType"] in question_types_avgs:
+            eta = question_types_avgs[student["questionType"]]
+        eta -= (datetime.now(pytz.timezone("America/Los_Angeles")).total_seconds() - student["startTime"].total_seconds()) / 60
+        if eta < 0:
+            eta = 0
+        min_eta = min(min_eta, eta)
+    total_eta = min_eta
+    for i in range(len(sorted_queue_data)):
+        if sorted_queue_data[i]["id"] == id and sorted_queue_data[i]["status"] == "In Progress":
+            return 0 # user is currently being helped, don't need to wait
+        elif sorted_queue_data[i]["id"] == id and sorted_queue_data[i]["status"] == "Waiting":
+            # this is the user's place in the queue, we can return our current accumulated eta at this point
+            return str(round(total_eta / NUM_OF_TAs))
+        else:
+            # in this case, we haven't reached user in the queue yet, meaning this is 
+            # a student ahead of the user in the queue who is also waiting and not 
+            # being helped by a TA yet, so we add their estimated wait time to the total_eta
+            if sorted_queue_data[i]["questionType"] in question_types_avgs:
+                total_eta += question_types_avgs[sorted_queue_data[i]["questionType"]]
             elif total_counts > 0:
                 # add another layer of specifity by having the average of all wait
                 # times so far be returned if there aren't any relevant question
                 # type averages yet
-                question_avg_sums = total_avg_per_question
+                total_eta += total_avg_per_question
             else:
-                question_avg_sums = DEFAULT_QUESTION_TIME
-    return str(round(question_avg_sums / NUM_OF_TAs))
+                total_eta += DEFAULT_QUESTION_TIME
+    return str(round(total_eta / NUM_OF_TAs)) # shouldn't reach this statement, otherwise user is not in queue??
+    
 
 
 @app.route('/start-help', methods=['POST'])
