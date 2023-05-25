@@ -245,14 +245,16 @@ def getWaitTime():
         if eta < 0:
             eta = 0
         min_eta = min(min_eta, eta)
-    total_eta = min_eta
+    total_eta = 0
+    if not min_eta == 9999999:
+        total_eta = min_eta
     for i in range(len(sorted_queue_data)):
         if sorted_queue_data[i]["id"] == id and sorted_queue_data[i]["status"] == "In Progress":
             return 0 # user is currently being helped, don't need to wait
         elif sorted_queue_data[i]["id"] == id and sorted_queue_data[i]["status"] == "Waiting":
             # this is the user's place in the queue, we can return our current accumulated eta at this point
             return str(round(total_eta / NUM_OF_TAs))
-        else:
+        elif sorted_queue_data[i]["status"] == "Waiting":
             # in this case, we haven't reached user in the queue yet, meaning this is 
             # a student ahead of the user in the queue who is also waiting and not 
             # being helped by a TA yet, so we add their estimated wait time to the total_eta
