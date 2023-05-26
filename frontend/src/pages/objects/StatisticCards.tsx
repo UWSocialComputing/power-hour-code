@@ -4,8 +4,8 @@ import Typography from "@mui/material/Typography";
 
 export default function StatisticCards(props:any) {
 
-  let waitTimeCardColor = props.waitTime > 30 ? "#FF8A7A" : props.waitTime > 20 ? "#F8C7A6" : props.waitTime > 10 ? "#F7DD8D": "#D1F5BE" 
-  
+  let waitTimeCardColor = props.waitTime > 30 ? "#FF8A7A" : props.waitTime > 20 ? "#F8C7A6" : props.waitTime > 10 ? "#F7DD8D": "#D1F5BE"
+
   return (
     <div className="h-1/6 mb-8 grid grid-cols-3 gap-4 place-content-stretch">
       <Card variant="outlined" sx={{backgroundColor: waitTimeCardColor}}>
@@ -31,7 +31,7 @@ export default function StatisticCards(props:any) {
       <Card variant="outlined">
         <CardContent>
           <Typography component="div" variant="h5">
-            Teaching Assistants
+            TAs on Duty
           </Typography>
           <Typography component="div" variant="h3">
             1

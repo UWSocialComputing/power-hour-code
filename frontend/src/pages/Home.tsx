@@ -24,7 +24,7 @@ import { CustomChatContext } from "../context/CustomChatContext";
 import { CreateChatView } from "./objects/CreateChatView";
 import Button from "@mui/material/Button";
 import QueueForm from './objects/QueueForm';
-import { Card, CardContent } from "@mui/material";
+import { Badge, Card, CardContent } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { socket } from "../socket.js";
@@ -73,22 +73,12 @@ export function Home() {
   }, [rowData, user.id]);
 
   useEffect(() => {
-    function onConnect() {
-      const transport = socket.io.engine.transport.name; // in most cases, "polling"
-      console.log(transport);
-      socket.io.engine.on("upgrade", () => {
-        const upgradedTransport = socket.io.engine.transport.name; // in most cases, "websocket"
-        console.log(upgradedTransport);
-      });
-    }
     function onUpdateQueue(value: any) {
       setRowData(value)
     }
     socket.on('update-queue', onUpdateQueue);
-    socket.on('connect', onConnect);
     return () => {
       socket.off('update-queue', onUpdateQueue);
-      socket.off('connect', onConnect);
     };
   }, []);
 
@@ -96,7 +86,7 @@ export function Home() {
   return (
   <div className="h-screen">
     <PowerHourAppBar/>
-    {getWaitTime?.data?.data <= 10 && 
+    {getWaitTime?.data?.data <= 10 &&
       <Alert className="mt-3 ml-5 mr-5" severity="warning">
         Have your questions ready! The estimated wait time is now <strong>{getWaitTime?.data?.data} mins</strong>
       </Alert>
@@ -171,6 +161,9 @@ function Channels({ loadedChannels }: ChannelListMessengerProps) {
   const toggleChatHandler = useContext(CustomChatContext)["toggleChatHandler"];
   const setActiveChannelHandler = useContext(CustomChatContext)["setActiveChannelHandler"];
   const { t, userLanguage } = useTranslationContext('ChannelPreview');
+  useEffect(() => {
+    setActiveChannel(undefined);
+  }, [setActiveChannel])
 
   return (
     <div className="flex flex-col h-full">
@@ -180,13 +173,10 @@ function Channels({ loadedChannels }: ChannelListMessengerProps) {
           <Add />
         </button>
       </div>
-      <div className="pl-10 pr-10 pt-8 light-blue-bg h-full rounded-bottom-corner scroll-on-overflow" >
+      <div className="pl-5 pr-5 pt-5 light-blue-bg h-full rounded-bottom-corner scroll-on-overflow" >
       {loadedChannels != null && loadedChannels.length > 0
         ? loadedChannels.map(channel => {
-          const isActive = channel === activeChannel;
-          const extraClasses = isActive
-            ? "bg-blue-500 text-white dark-blue-bg"
-            : "hover:blue-100 bg-gray-200";
+          const extraClasses = "hover:blue-100 bg-gray-200";
           const messagePrefix = channel.state.messages.length > 0 ? channel.state.messages[channel.state.messages.length - 1].user!.name : "";
           const messagePreview = getLatestMessagePreview(channel, t, userLanguage);
           return <button
@@ -195,13 +185,15 @@ function Channels({ loadedChannels }: ChannelListMessengerProps) {
               setActiveChannelHandler(channel);
               toggleChatHandler("chat");
             }}
-            className={`p-4 rounded-lg gap-2 mb-3 text-left w-full ${extraClasses}`}
+            className={`p-4 rounded-md gap-2 mb-3 text-left w-full ${extraClasses}`}
             key={channel.id}
             >
               <div>
-                <div className="text-elipsis font-semibold overflow-hidden whitespace-nowrap">
+                <Badge badgeContent={channel.state.unreadCount} color="secondary" variant="dot">
+                  <div className="text-elipsis font-semibold overflow-hidden whitespace-nowrap flex justify-between">
                   {channel.data?.name || channel.id}
-                </div>
+                  </div>
+                  </Badge>
                 <div className="preview flex gap-1 text-sm overflow-hidden text-elipsis whitespace-nowrap">
                   {messagePrefix}{messagePrefix && ": "}{messagePreview}
                 </div>
@@ -223,6 +215,7 @@ function CustomChannelHeader(props: ChannelHeaderProps) {
     overrideImage,
     overrideTitle,
   });
+  const { setActiveChannel } = useChatContext();
   const { member_count, subtitle } = channel?.data || {};
   const toggleChatHandler = useContext(CustomChatContext)["toggleChatHandler"];
   const [memberListOpen, setMemberListOpen] = useState(false);
@@ -236,6 +229,7 @@ function CustomChannelHeader(props: ChannelHeaderProps) {
       <button aria-label='Back' className="mr-5" onClick={() => {
         toggleMemberList(false);
         toggleChatHandler("channels");
+        setActiveChannel(undefined);
       }}>
         <ArrowBack />
       </button>
@@ -262,9 +256,9 @@ function CustomChannelHeader(props: ChannelHeaderProps) {
       <button onClick={() => toggleMemberList(!memberListOpen)}>
         <People />
       </button>
-      <Card className={memberListOpen ? "member-info" : "hidden"}>
+      <Card className={memberListOpen ? "member-info" : "hidden"} >
         <CardContent>
-          <MemberList />
+          <MemberList/>
         </CardContent>
       </Card>
     </div>
@@ -279,6 +273,7 @@ const MemberList = () => {
   const updatedUsers = Object.values(channel.state.members).map((user) => ({
     name: user.user!.name! ? user.user!.name! : user.user_id!,
     online: !!user.user!.online,
+    role: user.role
   }));
 
   return (
@@ -286,7 +281,7 @@ const MemberList = () => {
       <ul className='users-list mb-2'>
         {updatedUsers.filter((member) => {return member.name !== "OH Bot"}).map((member) => (
           <li key={member.name}>
-            {member.name} - {member.online ? 'active' : 'inactive'}
+            {member.name} {member.role === "owner" ? "(admin)" : ""} - {member.online ? 'active' : 'inactive'}
           </li>
         ))}
       </ul>

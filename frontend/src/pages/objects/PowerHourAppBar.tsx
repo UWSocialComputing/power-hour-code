@@ -78,7 +78,6 @@ export default function PowerHourAppBar() {
   const handleLogout = () => {
     setShowLogoutModal(false);
     logout.mutate()
-    
   };
 
   return (
@@ -158,7 +157,7 @@ export default function PowerHourAppBar() {
             Logging out
           </Typography>
           <Typography variant="body1" component="h2">
-            Are you sure you want to log out?
+            Are you sure you want to log out? You will lose your place in the queue.
           </Typography>
           <Stack justifyContent="end" direction="row" spacing={1}>
             <Button
@@ -168,7 +167,7 @@ export default function PowerHourAppBar() {
               onClick={handleLogout}>
               Logout
             </Button>
-            <Button 
+            <Button
               disableElevation size="small"
               variant='outlined'
               onClick={()=> setShowLogoutModal(false)}

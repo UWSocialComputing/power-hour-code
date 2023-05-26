@@ -151,7 +151,7 @@ export default function QueueForm(props: any) {
               />
             </Stack>
             <Typography variant="caption">
-              As a reminder, check the collaboration policy for your class
+              As a reminder, review the collaboration policy for your class for acceptable form of collaboration.
             </Typography>
 
             <Stack justifyContent="end" direction="row" spacing={1}>

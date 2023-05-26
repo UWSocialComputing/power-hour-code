@@ -202,20 +202,21 @@ def getWaitTime():
     question_types_counts = {}
     total_time = 0
     total_counts = 0
-    # get historic time to answer each different type of question so far
-    for entry in current_queue:
-        if current_queue[entry]["status"] == "Helped":
-            start_time = current_queue[entry]["startTime"].total_seconds()
-            end_time = current_queue[entry]["endTime"].total_seconds()
-            difference = (end_time - start_time) / 60
-            total_counts += 1
-            total_time += difference
-            if current_queue[entry]["questionType"] not in question_types_total_time:
-                question_types_total_time[current_queue[entry]["questionType"]] = difference
-                question_types_counts[current_queue[entry]["questionType"]] = 1
-            else:
-                question_types_total_time[current_queue[entry]["questionType"]] += difference
-                question_types_counts[current_queue[entry]["questionType"]] += 1
+    if current_queue:
+        # get historic time to answer each different type of question so far
+        for entry in current_queue:
+            if current_queue[entry]["status"] == "Helped":
+                start_time = current_queue[entry]["startTime"].total_seconds()
+                end_time = current_queue[entry]["endTime"].total_seconds()
+                difference = (end_time - start_time) / 60
+                total_counts += 1
+                total_time += difference
+                if current_queue[entry]["questionType"] not in question_types_total_time:
+                    question_types_total_time[current_queue[entry]["questionType"]] = difference
+                    question_types_counts[current_queue[entry]["questionType"]] = 1
+                else:
+                    question_types_total_time[current_queue[entry]["questionType"]] += difference
+                    question_types_counts[current_queue[entry]["questionType"]] += 1
     question_types_avgs = {}
     for q_type in question_types_total_time:
         avg = round(question_types_total_time[q_type] / question_types_counts[q_type])
@@ -255,8 +256,8 @@ def getWaitTime():
             # this is the user's place in the queue, we can return our current accumulated eta at this point
             return str(round(total_eta / NUM_OF_TAs))
         elif sorted_queue_data[i]["status"] == "Waiting":
-            # in this case, we haven't reached user in the queue yet, meaning this is 
-            # a student ahead of the user in the queue who is also waiting and not 
+            # in this case, we haven't reached user in the queue yet, meaning this is
+            # a student ahead of the user in the queue who is also waiting and not
             # being helped by a TA yet, so we add their estimated wait time to the total_eta
             if sorted_queue_data[i]["questionType"] in question_types_avgs:
                 total_eta += question_types_avgs[sorted_queue_data[i]["questionType"]]
@@ -268,7 +269,7 @@ def getWaitTime():
             else:
                 total_eta += DEFAULT_QUESTION_TIME
     return str(round(total_eta / NUM_OF_TAs)) # shouldn't reach this statement, otherwise user is not in queue??
-    
+
 
 
 @app.route('/start-help', methods=['POST'])
