@@ -193,6 +193,12 @@ def get_affected_users(channel_created_obj):
 
 @app.route('/get-wait-time', methods=['GET'])
 def getWaitTime():
+    """Returns the estimated wait time for the user based on the given user id
+    sample request: /get-wait-time?id=<user id>
+
+    Returns:
+        the estimated wait time in plain text
+    """
     id = request.args.get("id")
     if not id:
         return "Missing required parameters", 400
@@ -274,6 +280,11 @@ def getWaitTime():
 
 @app.route('/start-help', methods=['POST'])
 def startHelp():
+    """Starts helping a given student
+
+    Returns:
+        a success message in plain text
+    """
     body = request.json
     if missing_fields(body, ["id"]):
         return "Missing required parameters", 400
@@ -297,6 +308,11 @@ def startHelp():
 
 @app.route('/end-help', methods=['POST'])
 def endHelp():
+    """Finish helping a given student
+
+    Returns:
+        a success message in plain text
+    """
     body = request.json
     if missing_fields(body, ["id"]):
         return "Missing required parameters", 400
@@ -323,6 +339,12 @@ def endHelp():
 # returned
 @app.route('/get-queue-data', methods=['GET'])
 def getQueueData():
+    """Retrieves relevant queue data. If type is specified, only returns records with status "Waiting" or "In progress"
+    sample request: /get-queue-data?type=queue
+
+    Returns:
+        Queue data as a list
+    """
     current_queue = firebase.get("/queue", None)
     queue_data = sortQueueByTime(current_queue)
     for record in queue_data:
@@ -331,6 +353,14 @@ def getQueueData():
 
 
 def sortQueueByTime(current_queue):
+    """Sorts the record in the database by their timestamp
+
+    Args:
+        current_queue (list): a list of queue records
+
+    Returns:
+        a list of queue records sorted by timestamp
+    """
     queue_data = []
     if current_queue:
         for entry in current_queue:
@@ -345,6 +375,12 @@ def sortQueueByTime(current_queue):
 
 @app.route('/leave-queue', methods=['POST'])
 def leaveQueue():
+    """Removes the given user's request from the queue.
+    Request body: {"id": <user id>}
+
+    Returns:
+        a success message in plain text
+    """
     body = request.json
     if missing_fields(body, ["id"]):
         return "Missing required parameters", 400
@@ -367,6 +403,20 @@ def leaveQueue():
 
 @app.route('/join-queue', methods=['POST'])
 def joinQueue():
+    """Puts the given user and their request info in the queue.
+    Checks to make sure user can only have one request in the queue with "Waiting" status at a time.
+    Request body: {
+        "id": <user id>,
+        "name": <user name>,
+        "question": <question text>,
+        "questionType": <type of question>,
+        "inPersonOnline": "In Person" or "Online",
+        "openToCollaboration": True or False
+    }
+
+    Returns:
+        a success message in plain text
+    """
     body = request.json
     if missing_fields(body, ["inPersonOnline", "id", "name", "openToCollaboration", "question", "questionType"]):
         return "Missing required parameters", 400
@@ -394,6 +444,18 @@ def joinQueue():
 
 @app.route('/modify-request', methods=['POST'])
 def modifyRequest():
+    """Modifies a record in the queue table with the provided info
+    Checks to ensure the user does have a request with "Waiting" status
+    Request body: {
+        "id": <user id>,
+        "question": <question text>,
+        "questionType": <type of question>,
+        "inPersonOnline": "In Person" or "Online",
+        "openToCollaboration": True or False
+    }
+    Returns:
+        A success message in plain text
+    """
     body = request.json
     if missing_fields(body, ["inPersonOnline", "id", "openToCollaboration", "question", "questionType"]):
         return "Missing required parameters", 400
@@ -424,6 +486,14 @@ def modifyRequest():
 
 @app.route('/logout', methods=['POST'])
 def logout():
+    """Logs out the given user and removes their request from the queue
+    Request body: {
+        "token": <user stream chat token>
+    }
+
+    Returns:
+        A success message in plain text
+    """
     body = request.json
     if missing_fields(body, ["token"]):
         return "Missing required parameters", 400
@@ -448,6 +518,22 @@ def logout():
 
 @app.route('/login', methods=['POST'])
 def login():
+    """Logs in the given user and sends back user information
+    Request body {
+        "id": <user id>,
+        "password": <user password>
+    }
+
+    Returns:
+        Logged in user information in the form of {
+            "token": <stream chat token>,
+            "user": {
+                "id": <user id>,
+                "name": <user name>,
+                "password": <user password>
+            }
+        }
+    """
     body = request.json
     if missing_fields(body, ["id", "password"]):
         return "Missing required parameters", 400
@@ -479,6 +565,16 @@ def login():
 
 @app.route('/signup', methods=['POST'])
 def signup():
+    """Creates an account with the given user information
+    Request body: {
+        "id": <user id>,
+        "password": <user password>,
+        "name": <user full name>
+    }
+
+    Returns:
+        A success message in plain text
+    """
     body = request.json
     if missing_fields(body, ["id", "password", "name"]):
         return "Missing required parameters", 400
@@ -504,6 +600,14 @@ def signup():
 
 @app.route('/sendBotMessage', methods=['POST'])
 def sendBotMessage():
+    """Sends a bot message to the given channel
+    Request body: {
+        "channelId": <id of the new channel to send the message to>
+    }
+
+    Returns:
+        A success message in plain text
+    """
     body = request.json
     if missing_fields(body, ["channelId"]):
         return "Missing required parameters", 400

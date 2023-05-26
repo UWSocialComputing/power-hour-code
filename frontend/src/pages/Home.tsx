@@ -56,7 +56,8 @@ export function Home() {
    )
   });
 
-  // channels: channel list, chat: chat view, new: create chat view
+  // states for showChat
+  // channels: channel list, chat: chat view, new: create chat view, edit: add member view
   const [showChat, setShowChat] = useState("channels");
   const [showForm, setShowForm] = useState(false);
   const [rowData, setRowData] = useState([]);
